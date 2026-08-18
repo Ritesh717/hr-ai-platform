@@ -1,0 +1,62 @@
+/*
+  Design tokens — single source of truth (ui-plan.md §3).
+  Components read these via Tailwind utilities (see @theme block in app/globals.css),
+  never a literal hex/px value. Light is the default; [data-theme="dark"] overrides.
+*/
+
+:root {
+  --color-bg: #f6f4f1;
+  --color-surface: #ffffff;
+  --color-surface-raised: #2b2620;
+  --color-surface-raised-foreground: #f3efe9;
+  --color-border: #e8e3dd;
+
+  --color-text: #211d18;
+  --color-text-muted: #8a8378;
+
+  --color-primary: #e8703a;
+  --color-primary-foreground: #ffffff;
+
+  --color-success: #2f9e5b;
+  --color-success-foreground: #ffffff;
+  --color-warning: #d99a1b;
+  --color-warning-foreground: #221a05;
+  --color-danger: #d64545;
+  --color-danger-foreground: #ffffff;
+  --color-info: #3d7fd9;
+  --color-info-foreground: #ffffff;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-sm: 0 1px 2px 0 rgb(33 29 24 / 0.04);
+  --shadow-md: 0 8px 24px -4px rgb(33 29 24 / 0.08);
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #16140f;
+  --color-surface: #201c17;
+  --color-surface-raised: #0f0d0a;
+  --color-surface-raised-foreground: #f3efe9;
+  --color-border: #322c24;
+
+  --color-text: #f3efe9;
+  --color-text-muted: #9b9284;
+
+  --color-primary: #f0824c;
+  --color-primary-foreground: #1a0f07;
+
+  --color-success: #3fbf74;
+  --color-success-foreground: #0a2013;
+  --color-warning: #e5ad33;
+  --color-warning-foreground: #221a05;
+  --color-danger: #e56868;
+  --color-danger-foreground: #240a0a;
+  --color-info: #5c97e5;
+  --color-info-foreground: #071626;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.24);
+  --shadow-md: 0 8px 24px -4px rgb(0 0 0 / 0.4);
+}

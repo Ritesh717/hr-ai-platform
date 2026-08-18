@@ -80,6 +80,8 @@ Use the `phase-gate` skill to check this list before calling Stage 1 done.
 - Frontend (Next.js) implementation is not part of Stage 1, but its plan is: see
   [`ui-plan.md`](ui-plan.md) for the component library and full screen list, staged as F1–F11
   running alongside the backend stages. The API stays usable via `/docs` (OpenAPI) until F1 lands.
+  UI stage F1 has landed in `apps/web/` (mocked API, ahead of Stage 1) — see ui-plan.md §6 for
+  its status and what's still open before it's marked done.
 - When Stage 2 starts, the OpenAI Agents SDK for Python is the intended agent framework (see
   blueprint §1, §51); LangGraph is introduced only where explicit graph/state semantics earn their
   keep (blueprint suggests this becomes relevant around Stage 4+/10).

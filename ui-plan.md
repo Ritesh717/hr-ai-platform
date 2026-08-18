@@ -192,19 +192,26 @@ Mirrors `plan.md`'s backend stages but isn't blocked by them — early UI stages
 layer (typed against the same schemas the backend will expose) so component/screen work isn't
 idle waiting on the backend.
 
-| UI Stage | Delivers | Backend stage it pairs with |
-|---|---|---|
-| F1 | Tokens, theme provider, all §4.1/4.3 primitives, `AppShell`, Login, Dashboard shell (mock data), Employees Directory + Detail | Stage 1 |
-| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 |
-| F3 | Policy Library / "Ask HR" page | Stage 3 |
-| F4 | My Leave apply/history, Approvals Center, `ApprovalRequestCard` | Stage 4 |
-| F5 | Expense submit/list/approve incl. file upload + OCR confirm step | Stage 5 |
-| F6 | Onboarding Tracker, `WorkflowStatusTimeline` | Stage 6 |
-| F7 | Realtime notification toast (SSE/WebSocket) for event-driven updates | Stage 7 |
-| F8 | Analytics Dashboard + Ask Analytics | Stage 8 |
-| F9 | Recruitment screens + `KanbanBoard` | Stage 9 |
-| F10 | Full-page Copilot, cross-domain polish | Stage 10 |
-| F11 | Accessibility pass, responsive/resize QA across all screens, perf budget, full loading/empty/error coverage | Stage 11 |
+| UI Stage | Delivers | Backend stage it pairs with | Status |
+|---|---|---|---|
+| F1 | Tokens, theme provider, all §4.1/4.3 primitives, `AppShell`, Login, Dashboard shell (mock data), Employees Directory + Detail | Stage 1 | 🟡 built, pending visual QA |
+| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 | not started |
+| F3 | Policy Library / "Ask HR" page | Stage 3 | not started |
+| F4 | My Leave apply/history, Approvals Center, `ApprovalRequestCard` | Stage 4 | not started |
+| F5 | Expense submit/list/approve incl. file upload + OCR confirm step | Stage 5 | not started |
+| F6 | Onboarding Tracker, `WorkflowStatusTimeline` | Stage 6 | not started |
+| F7 | Realtime notification toast (SSE/WebSocket) for event-driven updates | Stage 7 | not started |
+| F8 | Analytics Dashboard + Ask Analytics | Stage 8 | not started |
+| F9 | Recruitment screens + `KanbanBoard` | Stage 9 | not started |
+| F10 | Full-page Copilot, cross-domain polish | Stage 10 | not started |
+| F11 | Accessibility pass, responsive/resize QA across all screens, perf budget, full loading/empty/error coverage | Stage 11 | not started |
+
+F1 implementation lives in `apps/web/`. Build (`npm run build`) and lint (`npm run lint`) are clean,
+and all four routes (`/login`, `/dashboard`, `/employees`, `/employees/[id]`) render correctly via a
+dev-server smoke test. Not yet done: an actual visual pass (light **and** dark, narrow **and** wide
+viewport per §8's DoD) — that requires eyeballing in a real browser, which wasn't available in the
+session that built this. Do that pass, plus a `/phase-gate --ui-stage F1` check, before flipping this
+to done and moving to F2.
 
 ## 7. Frontend folder structure
 

@@ -18,6 +18,7 @@ apps/
   agent_service/    agents, tools, prompts, policies
   workflow_worker/  Temporal workflows + activities (from Stage 6)
   event_consumer/   Kafka/Redpanda consumers (from Stage 7)
+  web/              Next.js frontend (see ui-plan.md) — component library + screens, staged F1-F11
 domain/             business logic per module (employee, leave, payroll, ...)
 infrastructure/      db, redis, kafka, temporal, storage, observability wiring
 shared/             auth, errors, events, logging, configuration
@@ -38,6 +39,14 @@ poetry install
 docker compose up -d   # postgres, redis
 poetry run alembic upgrade head
 poetry run start
+```
+
+The frontend (UI stage F1) is runnable now against mock data, ahead of the backend:
+
+```bash
+cd apps/web
+npm install
+npm run dev   # http://localhost:3000 -> redirects to /dashboard
 ```
 
 ## Working with this repo in Claude Code
