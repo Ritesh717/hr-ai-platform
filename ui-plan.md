@@ -238,9 +238,16 @@ apps/web/
 - No screen-specific logic inside `components/ui/` or `components/patterns/` — that belongs in `features/`.
 - Loading, empty, and error states exist for anything that fetches data.
 
-## 9. Suggested next step
+## 9. Repo skills for this plan
 
-Consider adding `new-ui-component` and `new-screen` skills (mirroring the backend's
-`new-domain-module`/`new-agent-tool`) so the token/reuse/resizability rules above are enforced
-structurally rather than by memory, the same way the backend skills enforce the service-layering
-rules. Not created yet — say the word and I'll add them alongside the existing four.
+Three skills in `.claude/skills/` keep the rules above structural rather than remembered by hand:
+
+- **new-ui-component** — scaffolds a `components/ui`/`patterns`/`layout` piece: token-only
+  styling, Radix-backed where interactive, container-driven sizing.
+- **new-screen** — scaffolds a screen from §5: composes existing components only, wires in
+  loading/empty/error states, uses `ConfirmDialog`/`ApprovalRequestCard` for high-impact actions.
+- **new-response-block** — adds a new `ResponseRenderer` block type so a new agent capability gets
+  a chat renderer without touching the chat shell.
+
+`phase-gate` also checks UI stages (`--ui-stage F4`, checking §6/§8 here) in addition to backend
+stages.

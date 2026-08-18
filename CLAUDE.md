@@ -56,6 +56,8 @@ before declaring a stage done.
   same expectation as `python-fastapi-mastery`.
 - Keep `plan.md`'s stage checklist current as work lands.
 - New domain module → use the `new-domain-module` skill. New agent tool → use the
-  `new-agent-tool` skill. New agent eval case → use the `agent-eval-case` skill. These exist so
-  the layering rules above are structural, not something to remember by hand each time.
+  `new-agent-tool` skill. New agent eval case → use the `agent-eval-case` skill. New UI component
+  → `new-ui-component`. New screen → `new-screen`. New chat response block → `new-response-block`.
+  These exist so the layering rules above (and the frontend rules in `ui-plan.md`) are structural,
+  not something to remember by hand each time.
 - Never log secrets, tokens, full payslips, or unredacted HR documents (blueprint §28).

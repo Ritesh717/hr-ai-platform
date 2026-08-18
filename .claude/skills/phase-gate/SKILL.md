@@ -12,15 +12,19 @@ and prevents jumping ahead to a later stage's infrastructure early (blueprint §
 ## Usage
 
 ```
-/phase-gate                # check the current stage from plan.md
-/phase-gate --stage 3      # check a specific stage
+/phase-gate                # check the current backend stage from plan.md
+/phase-gate --stage 3      # check a specific backend stage
+/phase-gate --ui-stage F4  # check a UI stage (F1-F11) from ui-plan.md instead
 ```
 
 ## What to do
 
-1. Read `plan.md` to find the current (or specified) stage and its checklist.
-2. Read `docs/blueprint.md` §50 (Definition of Done) and, if the stage introduces agent
-   functionality, the agent-specific subsection of §50 too.
+1. Read `plan.md` (backend stage) or `ui-plan.md` §6 (UI stage, `--ui-stage`) to find the current
+   or specified stage and its checklist/deliverables.
+2. For a backend stage: read `docs/blueprint.md` §50 (Definition of Done), and if the stage
+   introduces agent functionality, the agent-specific subsection of §50 too. For a UI stage: read
+   `ui-plan.md` §8 (Definition of Done) and check every screen/component the stage's row in §6
+   claims to deliver.
 3. For each checklist item, verify it against the actual repo state — don't take a checked box at
    face value if the code that would satisfy it doesn't visibly exist (e.g. "API tests" should map
    to real test files that pass, not just a checkbox someone ticked). Concretely check:
@@ -31,8 +35,8 @@ and prevents jumping ahead to a later stage's infrastructure early (blueprint §
    - Is there an audit log entry for every high-impact action this stage added?
 4. Report a clear pass/fail per item, not just an overall verdict — the user needs to know
    *which* gap to close, not just that one exists.
-5. If everything passes: update `plan.md` to mark the stage done and flip the next stage's status
-   from "not started" to "next".
+5. If everything passes: update `plan.md` (or `ui-plan.md` §6 for a UI stage) to mark the stage
+   done and flip the next stage's status from "not started" to "next".
 6. If gaps exist: do not mark the stage done. List the gaps as concrete next actions. Do not start
    scaffolding the next stage's infrastructure (e.g. Temporal before Stage 6 is gated, Kafka before
    Stage 7) even if asked, without flagging that the current stage isn't gated yet — surface the
