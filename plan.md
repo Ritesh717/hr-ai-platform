@@ -77,9 +77,9 @@ Use the `phase-gate` skill to check this list before calling Stage 1 done.
 
 - This project intentionally does **not** front-load Kubernetes, Kafka, or Temporal — those show
   up at the stage that introduces them (6, 7, 11).
-- Frontend (Next.js) is not part of Stage 1. The blueprint's Milestone 1 pairs it with the backend
-  early, but §46's stage sequence — which this plan follows — treats the API as usable via
-  `/docs` (OpenAPI) until an agent exists worth building a UI around.
+- Frontend (Next.js) implementation is not part of Stage 1, but its plan is: see
+  [`ui-plan.md`](ui-plan.md) for the component library and full screen list, staged as F1–F11
+  running alongside the backend stages. The API stays usable via `/docs` (OpenAPI) until F1 lands.
 - When Stage 2 starts, the OpenAI Agents SDK for Python is the intended agent framework (see
   blueprint §1, §51); LangGraph is introduced only where explicit graph/state semantics earn their
   keep (blueprint suggests this becomes relevant around Stage 4+/10).

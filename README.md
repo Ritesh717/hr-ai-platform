@@ -2,7 +2,7 @@
 
 A production-oriented HR platform built as a learning path for AI agent engineering: tool-using agents, RAG, action-taking agents, durable workflows, event-driven systems, text-to-SQL, multi-agent orchestration, human-in-the-loop, and observability — all inside one real, evolving codebase.
 
-The full design reference lives in [`docs/blueprint.md`](docs/blueprint.md). The build sequence and current status live in [`plan.md`](plan.md).
+The full design reference lives in [`docs/blueprint.md`](docs/blueprint.md). The backend build sequence and current status live in [`plan.md`](plan.md); the frontend component library and screen plan live in [`ui-plan.md`](ui-plan.md).
 
 ## Stack (Stage 1)
 
