@@ -1,20 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: hr_ai
-      POSTGRES_PASSWORD: hr_ai
-      POSTGRES_DB: hr_ai_platform
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hr_ai -d hr_ai_platform"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   redis:
     image: redis:7-alpine
     ports:
@@ -25,5 +9,31 @@ services:
       timeout: 5s
       retries: 10
 
+  # For apps/api (NestJS + MongoDB, see docs/blueprint.md appendix).
+  # Single-node replica set so Mongoose transactions work (used by TenantService.bootstrap and
+  # EmployeeService's write+audit-log flows).
+  mongo:
+    image: mongo:7
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo-rs-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >
+      mongosh --host mongo:27017 --eval
+      "try { rs.status() } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}) }"
+
 volumes:
-  postgres_data:
+  mongo_data:

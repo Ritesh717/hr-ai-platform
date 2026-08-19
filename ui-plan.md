@@ -232,8 +232,8 @@ apps/web/
 │   ├── employees/ leave/ expense/ recruitment/ analytics/ onboarding/ ...
 ├── lib/
 │   ├── theme/                 # tokens.css, ThemeProvider, useTheme
-│   ├── api/                   # typed client (ideally generated from the FastAPI OpenAPI schema)
-│   └── forms/                 # shared zod schemas, mirrored against backend Pydantic schemas
+│   ├── api/                   # typed client (ideally generated from the NestJS/Swagger OpenAPI schema)
+│   └── forms/                 # shared zod schemas, mirrored against backend class-validator DTOs
 ```
 
 ## 8. Definition of done — component or screen

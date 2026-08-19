@@ -15,10 +15,12 @@ import {
 export function AppShell({
   breadcrumb,
   user,
+  onSignOut,
   children,
 }: {
   breadcrumb?: React.ReactNode;
   user: { name: string; role: string; avatarUrl?: string | null };
+  onSignOut?: () => void;
   children: React.ReactNode;
 }) {
   const [chatOpen, setChatOpen] = useState(false);
@@ -28,7 +30,7 @@ export function AppShell({
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar breadcrumb={breadcrumb} user={user} />
+        <TopBar breadcrumb={breadcrumb} user={user} onSignOut={onSignOut} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
 

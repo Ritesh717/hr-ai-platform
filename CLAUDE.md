@@ -50,14 +50,39 @@ infrastructure (Kubernetes, Kafka, Temporal) before the stage that introduces it
 explicit point is that the learning curve depends on this ordering. Use the `phase-gate` skill
 before declaring a stage done.
 
+## Backend implementations
+
+`apps/api/` (NestJS + Mongoose + MongoDB) is the active backend implementation. The original
+FastAPI + PostgreSQL + SQLAlchemy backend has moved to `apps/deprecated/api/` — kept as a frozen
+code snapshot for reference, not runnable. Its supporting Python packages (`domain/`,
+`infrastructure/`, `shared/`), `migrations/`, `tests/`, `pyproject.toml`/`poetry.lock`, the root
+Python `Dockerfile`, and the `.venv` have all been deleted (nothing else in the repo depended on
+them — `apps/api` is fully self-contained). Don't try to `import`, run, lint, or test
+`apps/deprecated/api/` — it will fail; it's kept only as a readable reference for the design it
+implemented. See `docs/blueprint.md` §54 and `plan.md`'s backend-implementation section for the
+history and design deltas between the two.
+
+Note: rule 1 above and the blueprint's Stage 2–11 roadmap (§46) were written against the
+PostgreSQL/SQLAlchemy/pgvector stack and the Python agent SDK — they have **not** been updated
+for the Mongo/NestJS backend. Treat "→ PostgreSQL" as "→ the active database" until/unless the
+blueprint is explicitly revised; flag it if a stage's Python-specific assumptions (Alembic,
+pgvector, OpenAI Agents SDK for Python) need re-deciding for the new backend before building on
+top of them.
+
+The non-negotiable rules above are otherwise stack-agnostic and apply to both backends
+unchanged — authorization lives in domain services, not controllers or the LLM; tenant scoping is
+explicit on every query; audit logging, human-in-the-loop, and prompt hygiene rules don't depend
+on which backend they attach to.
+
 ## Working conventions
 
 - Prefer running the actual code/tests over eyeballing them before calling something done —
   same expectation as `python-fastapi-mastery`.
 - Keep `plan.md`'s stage checklist current as work lands.
-- New domain module → use the `new-domain-module` skill. New agent tool → use the
-  `new-agent-tool` skill. New agent eval case → use the `agent-eval-case` skill. New UI component
-  → `new-ui-component`. New screen → `new-screen`. New chat response block → `new-response-block`.
-  These exist so the layering rules above (and the frontend rules in `ui-plan.md`) are structural,
-  not something to remember by hand each time.
+- New UI component → `new-ui-component`. New screen → `new-screen`. New chat response block →
+  `new-response-block`. These exist so the frontend rules in `ui-plan.md` are structural, not
+  something to remember by hand each time.
+- The `new-domain-module` and `new-agent-tool` skills scaffold the deprecated FastAPI/`domain/`
+  pattern and no longer apply (that code is deleted) — there's no equivalent yet for `apps/api`.
+  `agent-eval-case` is stack-agnostic and still applies once agent work starts.
 - Never log secrets, tokens, full payslips, or unredacted HR documents (blueprint §28).

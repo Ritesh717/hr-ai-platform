@@ -1,14 +1,8 @@
-# Python
+# Python (apps/deprecated/api only — no tooling runs against it anymore, see plan.md)
 __pycache__/
 *.py[cod]
-*.egg-info/
 .venv/
 venv/
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
-htmlcov/
-.coverage
 
 # Env / secrets
 .env
@@ -18,6 +12,9 @@ htmlcov/
 # Node / frontend (added in a later phase)
 node_modules/
 .next/
+dist/
+coverage/
+apps/deprecated/
 
 # OS / editor
 .DS_Store

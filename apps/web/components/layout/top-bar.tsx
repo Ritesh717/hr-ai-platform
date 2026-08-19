@@ -16,9 +16,11 @@ import { useTheme } from "@/lib/theme/theme-provider";
 export function TopBar({
   breadcrumb,
   user,
+  onSignOut,
 }: {
   breadcrumb?: React.ReactNode;
   user: { name: string; role: string; avatarUrl?: string | null };
+  onSignOut?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
 
@@ -49,7 +51,7 @@ export function TopBar({
               <Settings className="size-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-danger">
+            <DropdownMenuItem className="text-danger" onClick={onSignOut}>
               <LogOut className="size-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

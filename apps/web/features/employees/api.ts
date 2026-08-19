@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchEmployee, fetchEmployees, updateEmployee } from "@/lib/api/employees";
-import type { Employee } from "@/lib/api/types";
+import { fetchDepartments } from "@/lib/api/departments";
+import { fetchEmployee, fetchEmployees, updateEmployee, type EmployeeUpdatePatch } from "@/lib/api/employees";
 
 export function useEmployees() {
   return useQuery({ queryKey: ["employees"], queryFn: fetchEmployees });
@@ -15,10 +15,14 @@ export function useEmployee(id: string) {
 export function useUpdateEmployee(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Employee>) => updateEmployee(id, patch),
+    mutationFn: (patch: EmployeeUpdatePatch) => updateEmployee(id, patch),
     onSuccess: (employee) => {
       queryClient.setQueryData(["employees", id], employee);
       queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
+}
+
+export function useDepartments() {
+  return useQuery({ queryKey: ["departments"], queryFn: fetchDepartments });
 }

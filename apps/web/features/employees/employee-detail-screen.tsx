@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useEmployee, useUpdateEmployee } from "@/features/employees/api";
-import { employeeProfileFields, employeeProfileSchema } from "@/features/employees/schema";
+import { useDepartments, useEmployee, useUpdateEmployee } from "@/features/employees/api";
+import { NO_DEPARTMENT, employeeProfileSchema, getEmployeeProfileFields } from "@/features/employees/schema";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export function EmployeeDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const push = useToast();
   const { data: employee, isLoading, isError, refetch } = useEmployee(id);
+  const { data: departments } = useDepartments();
   const updateEmployee = useUpdateEmployee(id);
   const [editing, setEditing] = useState(false);
 
@@ -37,6 +38,19 @@ export function EmployeeDetailScreen({ id }: { id: string }) {
   if (isError || !employee) {
     return <ErrorState description="Couldn't load this employee." onRetry={() => refetch()} />;
   }
+
+  const departmentName = employee.departmentId
+    ? (departments ?? []).find((department) => department.id === employee.departmentId)?.name
+    : null;
+
+  const formValues = {
+    fullName: employee.fullName,
+    jobTitle: employee.jobTitle,
+    departmentId: employee.departmentId ?? NO_DEPARTMENT,
+    status: employee.status,
+    location: employee.location ?? "",
+    hireDate: new Date(employee.hireDate),
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,38 +69,37 @@ export function EmployeeDetailScreen({ id }: { id: string }) {
       <Card>
         <CardContent className="flex flex-col gap-6">
           <div className="flex items-center gap-4">
-            <Avatar name={employee.name} src={employee.avatarUrl} size="lg" />
+            <Avatar name={employee.fullName} size="lg" />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-text">{employee.name}</h2>
+                <h2 className="text-lg font-semibold text-text">{employee.fullName}</h2>
                 <Badge tone={statusTone[employee.status]}>{statusLabel[employee.status]}</Badge>
               </div>
               <p className="text-sm text-text-muted">
-                {employee.jobTitle} · {employee.department}
+                {employee.jobTitle}
+                {departmentName ? ` · ${departmentName}` : ""} · {employee.role}
               </p>
+              <p className="text-sm text-text-muted">{employee.email}</p>
             </div>
           </div>
 
           {editing ? (
             <Form
               schema={employeeProfileSchema}
-              fields={employeeProfileFields}
-              defaultValues={{ ...employee, hireDate: new Date(employee.hireDate) }}
+              fields={getEmployeeProfileFields(departments ?? [])}
+              defaultValues={formValues}
               onCancel={() => setEditing(false)}
               onSubmit={async (values) => {
                 await updateEmployee.mutateAsync({
                   ...values,
-                  hireDate: values.hireDate.toISOString(),
+                  departmentId: values.departmentId === NO_DEPARTMENT ? "" : values.departmentId,
                 });
                 push({ title: "Profile updated", tone: "success" });
                 setEditing(false);
               }}
             />
           ) : (
-            <ViewOnlyForm
-              fields={employeeProfileFields}
-              values={{ ...employee, hireDate: new Date(employee.hireDate) }}
-            />
+            <ViewOnlyForm fields={getEmployeeProfileFields(departments ?? [])} values={formValues} />
           )}
         </CardContent>
       </Card>

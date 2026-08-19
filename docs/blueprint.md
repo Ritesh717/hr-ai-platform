@@ -2494,3 +2494,56 @@ The final system should look conceptually like:
 ```
 
 The key objective is to make this **one continuous project**, where every phase introduces a new agent-engineering concept while preserving the same production-quality platform underneath.
+
+# 54. Appendix: Node.js/MongoDB Backend (`apps/api`)
+
+Everything in §1–53 above describes the stack this project was **originally staged around**:
+FastAPI, PostgreSQL, SQLAlchemy, Alembic, pgvector. That implementation's app code now lives at
+`apps/deprecated/api/`, kept as a frozen reference snapshot — but its supporting Python packages
+(`domain/`, `infrastructure/`, `shared/`), `migrations/`, `tests/`, `pyproject.toml`/
+`poetry.lock`, the Python `Dockerfile`, and the `.venv` have all been **deleted**, since nothing
+else in the repo depended on them once the Node backend was verified working. `apps/deprecated/
+api/` cannot be imported, run, or tested anymore; §1–53's prose still describes the design
+accurately as a historical record, but the code itself is not runnable and is not being
+developed further.
+
+`apps/api/` (NestJS + Mongoose + MongoDB) started as a parallel port of Stage 1's scope only
+(§5/§46 Stage 1's employee/department/RBAC/audit-log/auth surface) and was then promoted to the
+active backend. Whether Stage 2+ (agent tool-calling, RAG/pgvector, Temporal, Kafka, text-to-SQL)
+targets this stack or gets re-planned for it is **not yet decided** — §1–53's Python/Postgres-
+specific mechanics (SQLAlchemy sessions, Alembic migrations, pgvector, the Python Agents SDK)
+have not been translated, only Stage 1's scope has. Track status in [`plan.md`](../plan.md)'s
+backend-implementations section.
+
+## Design deltas from the PostgreSQL design (§20–22, §36)
+
+- **Multi-tenancy**: §20's suggestion to use PostgreSQL Row-Level Security has no MongoDB
+  equivalent. The Node port relies entirely on the same explicit, application-layer discipline
+  the Python side already uses in practice (every repository method takes and filters on
+  `tenantId`) — there was no RLS in the Python implementation as of Stage 1 either (deferred to
+  Stage 11 hardening per plan.md), so this delta is smaller than it looks.
+- **Migrations**: no Alembic equivalent. Mongoose schemas are enforced at the application layer,
+  not the database's; `apps/api/scripts/sync-indexes.ts` is the closest analogue to "run
+  migrations" — it explicitly (re)builds every unique index declared in the Mongoose schemas at
+  deploy time.
+- **RBAC storage**: §22 describes Role/Permission/RolePermission as three tables (Permission
+  global, Role tenant-scoped, joined by role_permissions). The Mongo port embeds
+  `permissions: PermissionCode[]` directly on the `Role` document — Mongo doesn't need the SQL
+  join-table pattern, and the global permission catalog is served straight from the
+  `PermissionCode` TypeScript enum (no DB read), since Permission rows never carried
+  tenant-specific data in the Python design either (`description` was always null).
+- **Transactions**: §16's "explicit repositories, transaction boundaries" becomes
+  `connection.transaction()` (Mongoose sessions) wrapping the same multi-collection writes that
+  shared a Postgres transaction via `get_db()` — specifically `TenantService.bootstrap` (tenant +
+  3 roles + HR admin) and `EmployeeService`'s create/update/delete (document write + audit log
+  entry). This requires MongoDB to run as a replica set even for local development (see
+  `docker-compose.yml`'s `mongo` + `mongo-rs-init` services) — a single standalone `mongod`
+  cannot run multi-document transactions.
+- **Vector search (§21)**: not applicable — the Node port only covers Stage 1's scope, which
+  predates the Policy RAG agent (Stage 3).
+
+Everything else — the permission model itself (7 fixed `PermissionCode`s, 3 default role
+templates, the RBAC_MANAGE self-lockout guardrail, the role-in-use delete guardrail), the JWT
+auth model (permissions always resolved fresh from the DB per request, never trusted from the
+token), the employee self-service field-level authorization split, and the structured
+error/logging contracts — is a direct behavioral port, not a reinterpretation.

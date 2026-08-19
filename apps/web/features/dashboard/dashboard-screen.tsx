@@ -1,9 +1,9 @@
 "use client";
 
-import { CalendarCheck, ClipboardList, TrendingUp, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
-import { useEmployees } from "@/features/employees/api";
+import { useDepartments, useEmployees } from "@/features/employees/api";
 import { kpiTrend, upcomingApprovals, workingFormat } from "@/lib/mocks/dashboard";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,16 +14,17 @@ import { DataTable } from "@/components/patterns/data-table";
 import { HighlightCard } from "@/components/patterns/highlight-card";
 import { ProgressStat } from "@/components/patterns/progress-stat";
 import { StatCard } from "@/components/patterns/stat-card";
-import { employeeColumns } from "@/features/employees/columns";
+import { getEmployeeColumns } from "@/features/employees/columns";
 
 export function DashboardScreen() {
   const router = useRouter();
   const { data: employees, isLoading } = useEmployees();
+  const { data: departments } = useDepartments();
 
   const onLeaveToday = employees?.filter((employee) => employee.status === "on_leave").length ?? 0;
-  const avgPerformance = employees?.length
-    ? Math.round(employees.reduce((sum, employee) => sum + employee.performanceScore, 0) / employees.length)
-    : 0;
+  const departmentsById = Object.fromEntries(
+    (departments ?? []).map((department) => [department.id, department.name]),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,11 +33,10 @@ export function DashboardScreen() {
         description="Here's what's happening across the organization today."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Users} label="Total employees" value={String(employees?.length ?? "—")} delta={{ value: "4.1% vs last month", direction: "up" }} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard icon={Users} label="Total employees" value={String(employees?.length ?? "—")} />
         <StatCard icon={CalendarCheck} label="On leave today" value={String(onLeaveToday)} />
         <StatCard icon={ClipboardList} label="Open approvals" value={String(upcomingApprovals.length)} />
-        <StatCard icon={TrendingUp} label="Avg. performance" value={`${avgPerformance}%`} delta={{ value: "2.3% vs last quarter", direction: "up" }} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -88,7 +88,7 @@ export function DashboardScreen() {
           </CardHeader>
           <CardContent>
             <DataTable
-              columns={employeeColumns}
+              columns={getEmployeeColumns(departmentsById)}
               data={(employees ?? []).slice(0, 5)}
               loading={isLoading}
               onRowClick={(employee) => router.push(`/employees/${employee.id}`)}

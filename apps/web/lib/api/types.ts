@@ -1,17 +1,27 @@
 /**
- * Mirrors the shape Stage 1's employee domain module (domain/employee) will expose
- * over /api/employees once the backend lands — see ui-plan.md §6 (F1 pairs with Stage 1).
+ * Mirrors domain/employee/schemas.py::EmployeeResponse (camelCased) — see
+ * lib/api/employees.ts for the mapping.
  */
 export interface Employee {
   id: string;
-  name: string;
+  tenantId: string;
+  departmentId: string | null;
+  managerId: string | null;
   email: string;
-  avatarUrl?: string | null;
+  fullName: string;
   jobTitle: string;
-  department: string;
   status: "active" | "on_leave" | "terminated";
   hireDate: string; // ISO date
-  location: string;
-  bio?: string;
-  performanceScore: number; // 0-100
+  location: string | null;
+  createdAt: string;
+  updatedAt: string;
+  roleId: string;
+  role: string;
+}
+
+/** Mirrors domain/department/schemas.py::DepartmentResponse. */
+export interface Department {
+  id: string;
+  tenantId: string;
+  name: string;
 }

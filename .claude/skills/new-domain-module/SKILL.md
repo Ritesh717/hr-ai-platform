@@ -38,10 +38,12 @@ payroll, recruitment, expense, onboarding, performance):
    business operation, not a CRUD passthrough (e.g. `request_leave(...)`, not just `create(...)`),
    even if today it only wraps the repository — this is the seam agents and API routes both call
    through, and it's the only place authorization checks belong.
-6. `apps/api/routers/<name>.py` — FastAPI router calling the service, with request/response
-   schemas, proper status codes, and a `Depends` chain for auth. Wire it into
-   `apps/api/routers/__init__.py` (or the aggregator router) with prefix `/api/v1/<name>s` unless
-   the plural is irregular.
+6. `apps/deprecated/api/routers/<name>.py` — FastAPI router calling the service, with
+   request/response schemas, proper status codes, and a `Depends` chain for auth. Wire it into
+   `apps/deprecated/api/routers/__init__.py` (or the aggregator router) with prefix
+   `/api/v1/<name>s` unless the plural is irregular. Note: this skill scaffolds the deprecated
+   FastAPI backend — the active backend is `apps/api/` (NestJS/Mongoose); there's no equivalent
+   skill for it yet.
 7. A migration stub note: remind the user to run
    `alembic revision --autogenerate -m "create <name> table"` once the model is finalized — don't
    hand-write migration SQL.

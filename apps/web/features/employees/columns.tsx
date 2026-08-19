@@ -17,33 +17,40 @@ const statusLabel = {
   terminated: "Terminated",
 } as const;
 
-export const employeeColumns: ColumnDef<Employee, unknown>[] = [
-  {
-    accessorKey: "name",
-    header: "Employee",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-3">
-        <Avatar name={row.original.name} src={row.original.avatarUrl} size="sm" />
-        <div>
-          <p className="font-medium text-text">{row.original.name}</p>
-          <p className="text-xs text-text-muted">{row.original.jobTitle}</p>
+export function getEmployeeColumns(
+  departmentsById: Record<string, string>,
+): ColumnDef<Employee, unknown>[] {
+  return [
+    {
+      accessorKey: "fullName",
+      header: "Employee",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <Avatar name={row.original.fullName} size="sm" />
+          <div>
+            <p className="font-medium text-text">{row.original.fullName}</p>
+            <p className="text-xs text-text-muted">{row.original.jobTitle}</p>
+          </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "department",
-    header: "Department",
-  },
-  {
-    accessorKey: "location",
-    header: "Location",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge tone={statusTone[row.original.status]}>{statusLabel[row.original.status]}</Badge>
-    ),
-  },
-];
+      ),
+    },
+    {
+      id: "department",
+      header: "Department",
+      cell: ({ row }) =>
+        row.original.departmentId ? (departmentsById[row.original.departmentId] ?? "—") : "—",
+    },
+    {
+      accessorKey: "location",
+      header: "Location",
+      cell: ({ row }) => row.original.location ?? "—",
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge tone={statusTone[row.original.status]}>{statusLabel[row.original.status]}</Badge>
+      ),
+    },
+  ];
+}
