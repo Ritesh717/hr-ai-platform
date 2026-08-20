@@ -31,6 +31,23 @@
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
 
+  --color-glass-surface-subtle: var(--color-glass-surface-subtle);
+  --color-glass-surface: var(--color-glass-surface);
+  --color-glass-surface-strong: var(--color-glass-surface-strong);
+  --color-glass-surface-inverse: var(--color-glass-surface-inverse);
+  --color-glass-border: var(--color-glass-border);
+  --color-glass-border-strong: var(--color-glass-border-strong);
+  --color-glass-highlight: var(--color-glass-highlight);
+  --color-overlay-scrim: var(--color-overlay-scrim);
+
+  --shadow-glass-sm: var(--shadow-glass-sm);
+  --shadow-glass-md: var(--shadow-glass-md);
+  --shadow-glass-glow: var(--shadow-glass-glow);
+
+  --blur-glass-sm: var(--blur-glass-sm);
+  --blur-glass-md: var(--blur-glass-md);
+  --blur-glass-lg: var(--blur-glass-lg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -43,4 +60,10 @@ body {
 
 * {
   border-color: var(--color-border);
+}
+
+.glass-backdrop {
+  background-color: var(--color-bg);
+  background-image: var(--gradient-decorative);
+  background-attachment: fixed;
 }

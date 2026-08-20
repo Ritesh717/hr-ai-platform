@@ -60,7 +60,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 if (!open) remove(toast.id);
               }}
               className={cn(
-                "flex items-start gap-3 rounded-lg border bg-surface p-4 shadow-md",
+                "flex items-start gap-3 rounded-lg border bg-glass-surface backdrop-blur-glass-md backdrop-saturate-150 p-4 shadow-glass-md",
                 toneClass[toast.tone],
               )}
             >

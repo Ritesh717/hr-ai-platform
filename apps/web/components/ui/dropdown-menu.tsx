@@ -21,7 +21,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-40 rounded-lg border border-border bg-surface p-1 shadow-md outline-none",
+          "z-50 min-w-40 rounded-lg border border-glass-border bg-glass-surface backdrop-blur-glass-md backdrop-saturate-150 p-1 shadow-glass-md outline-none",
           className,
         )}
         {...props}
@@ -97,7 +97,7 @@ export function DropdownMenuSubContent({
   return (
     <DropdownMenuPrimitive.SubContent
       className={cn(
-        "z-50 min-w-40 rounded-lg border border-border bg-surface p-1 shadow-md outline-none",
+        "z-50 min-w-40 rounded-lg border border-glass-border bg-glass-surface backdrop-blur-glass-md backdrop-saturate-150 p-1 shadow-glass-md outline-none",
         className,
       )}
       {...props}

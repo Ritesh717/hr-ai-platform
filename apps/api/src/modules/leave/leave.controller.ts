@@ -5,10 +5,11 @@ import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { LeaveBalanceResponseDto } from './dto/leave-balance-response.dto';
 import { LeaveRequestCreateDto } from './dto/leave-request-create.dto';
 import { LeaveRequestListResponseDto, LeaveRequestResponseDto } from './dto/leave-request-response.dto';
+import { LeaveRequestUpdateDto } from './dto/leave-request-update.dto';
 import { LeaveStatusUpdateDto } from './dto/leave-status-update.dto';
 import { LeaveTeamEntryDto } from './dto/leave-team-entry.dto';
 import { LeaveService } from './leave.service';
-import { LeaveStatus } from './schemas/leave-request.schema';
+import { LeaveStatus, isLeaveStatus } from './schemas/leave-request.schema';
 
 // Thin: extracts CurrentEmployee and delegates to LeaveService — permission checks happen there.
 @Controller('api/v1/leave')
@@ -49,9 +50,23 @@ export class LeaveController {
     @Body() dto: LeaveStatusUpdateDto,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<LeaveRequestResponseDto> {
-    const request = await this.leaveService.updateStatus(id, dto.status, {
+    const request = await this.leaveService.updateStatus(id, dto.status, dto.comment, {
       tenantId: current.tenantId,
+      actorId: current.employeeId,
       actorPermissions: current.permissions,
+    });
+    return LeaveRequestResponseDto.fromDocument(request);
+  }
+
+  @Patch('requests/:id')
+  async editRequest(
+    @Param('id') id: string,
+    @Body() dto: LeaveRequestUpdateDto,
+    @CurrentEmployee() current: CurrentEmployeeType,
+  ): Promise<LeaveRequestResponseDto> {
+    const request = await this.leaveService.editRequest(id, dto, {
+      tenantId: current.tenantId,
+      actorId: current.employeeId,
     });
     return LeaveRequestResponseDto.fromDocument(request);
   }
@@ -73,9 +88,12 @@ export class LeaveController {
 
   @Get('team')
   getTeam(
-    @Query('status') status: LeaveStatus | undefined,
+    @Query('status') status: string | undefined,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<LeaveTeamEntryDto[]> {
-    return this.leaveService.getTeamLeave({ tenantId: current.tenantId, actorId: current.employeeId, status });
+    const statuses = status
+      ? (status.split(',').filter(isLeaveStatus) as LeaveStatus[])
+      : undefined;
+    return this.leaveService.getTeamLeave({ tenantId: current.tenantId, actorId: current.employeeId, statuses });
   }
 }

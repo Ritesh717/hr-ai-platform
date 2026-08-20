@@ -13,7 +13,13 @@ export function HighlightCard({
   className?: string;
 }) {
   return (
-    <Card raised className={cn("flex flex-col gap-4 p-5", className)}>
+    <Card
+      surface="glass-strong"
+      className={cn(
+        "flex flex-col gap-4 p-5 shadow-[var(--shadow-glass-md),var(--shadow-glass-glow)]",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-sm font-semibold">{title}</h3>
         {action}

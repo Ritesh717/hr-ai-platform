@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, CalendarClock, LayoutDashboard, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { Building2, CalendarClock, LayoutDashboard, ScrollText, ShieldCheck, Users, Users2 } from "lucide-react";
 import type { PermissionCode } from "@/lib/api/types";
 
 export interface NavConfigItem {
@@ -29,6 +29,7 @@ export const navConfig: NavConfigSection[] = [
       { href: "/employees", label: "Employees", icon: Users, permission: "employee.read" },
       { href: "/departments", label: "Departments", icon: Building2, permission: "department.read" },
       { href: "/time-off", label: "Time Off", icon: CalendarClock },
+      { href: "/my-team", label: "My Team", icon: Users2 },
     ],
   },
   {

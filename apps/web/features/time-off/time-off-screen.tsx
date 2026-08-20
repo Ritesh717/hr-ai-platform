@@ -38,8 +38,8 @@ export function TimeOffScreen() {
 
   const { data: balance } = useLeaveBalance();
   const { data: requests, isLoading: requestsLoading } = useLeaveRequests();
-  const { data: teamApproved } = useTeamLeave();
-  const { data: teamPending } = useTeamLeave("pending");
+  const { data: teamApproved } = useTeamLeave(["approved"]);
+  const { data: teamPending } = useTeamLeave(["pending"]);
   const { data: holidays, isLoading: holidaysLoading } = useHolidays();
 
   const createRequest = useCreateLeaveRequest();

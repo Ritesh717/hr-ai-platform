@@ -9,8 +9,10 @@ import {
   fetchLeaveBalance,
   fetchLeaveRequests,
   fetchTeamLeave,
+  updateLeaveRequest,
   updateLeaveStatus,
   type LeaveRequestCreateInput,
+  type LeaveRequestUpdateInput,
 } from "@/lib/api/leave";
 import type { LeaveStatus } from "@/lib/api/types";
 
@@ -22,8 +24,11 @@ export function useLeaveBalance() {
   return useQuery({ queryKey: ["leave-balance"], queryFn: () => fetchLeaveBalance() });
 }
 
-export function useTeamLeave(status?: LeaveStatus) {
-  return useQuery({ queryKey: ["leave-team", status ?? "approved"], queryFn: () => fetchTeamLeave(status) });
+export function useTeamLeave(statuses?: LeaveStatus[]) {
+  return useQuery({
+    queryKey: ["leave-team", statuses ? [...statuses].sort((a, b) => a.localeCompare(b)).join(",") : "approved"],
+    queryFn: () => fetchTeamLeave(statuses),
+  });
 }
 
 export function useCreateLeaveRequest() {
@@ -40,7 +45,20 @@ export function useCreateLeaveRequest() {
 export function useUpdateLeaveStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: LeaveStatus }) => updateLeaveStatus(id, status),
+    mutationFn: ({ id, status, comment }: { id: string; status: LeaveStatus; comment?: string }) =>
+      updateLeaveStatus(id, status, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-team"] });
+    },
+  });
+}
+
+export function useUpdateLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: LeaveRequestUpdateInput }) => updateLeaveRequest(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["leave-balance"] });

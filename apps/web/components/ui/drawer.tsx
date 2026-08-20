@@ -25,10 +25,10 @@ export function DrawerContent({
 }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-overlay-scrim backdrop-blur-glass-lg backdrop-saturate-150" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed z-50 flex flex-col border-border bg-surface p-6 shadow-md focus:outline-none",
+          "fixed z-50 flex flex-col border-glass-border-strong bg-glass-surface-strong backdrop-blur-glass-lg backdrop-saturate-150 p-6 shadow-glass-md focus:outline-none",
           sideClasses[side],
           className,
         )}

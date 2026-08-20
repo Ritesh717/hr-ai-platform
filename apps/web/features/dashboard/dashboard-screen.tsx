@@ -103,7 +103,7 @@ export function DashboardScreen() {
                   <Avatar name={actorName} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{humanizeAction(log.action)}</p>
-                    <p className="truncate text-xs text-surface-raised-foreground/60">
+                    <p className="truncate text-xs text-surface-raised-foreground/75">
                       {actorName} · {new Date(log.createdAt).toLocaleString()}
                     </p>
                   </div>
