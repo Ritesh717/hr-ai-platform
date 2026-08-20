@@ -7,9 +7,20 @@ import { IconButton } from "@/components/ui/icon-button";
 import { navConfig } from "@/components/layout/nav-config";
 import { NavItem } from "@/components/layout/nav-item";
 import { NavSection } from "@/components/layout/nav-section";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { data: currentUser } = useCurrentUser();
+
+  const visibleSections = navConfig
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.permission || currentUser?.permissions.has(item.permission),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <aside
@@ -28,7 +39,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-6 overflow-y-auto">
-        {navConfig.map((section) => (
+        {visibleSections.map((section) => (
           <NavSection key={section.title} title={section.title} collapsed={collapsed}>
             {section.items.map((item) => (
               <NavItem

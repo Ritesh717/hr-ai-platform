@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { fetchMe } from "@/lib/api/auth";
 import { fetchEmployee } from "@/lib/api/employees";
+import type { PermissionCode } from "@/lib/api/types";
 import { decodeToken } from "@/lib/auth/jwt";
 import { getToken } from "@/lib/auth/token";
 
@@ -12,8 +14,14 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ["current-user", claims?.sub],
     queryFn: async () => {
-      const employee = await fetchEmployee(claims!.sub);
-      return { name: employee.fullName, role: employee.role, avatarUrl: null as string | null };
+      const [employee, me] = await Promise.all([fetchEmployee(claims!.sub), fetchMe()]);
+      return {
+        employeeId: employee.id,
+        name: employee.fullName,
+        role: employee.role,
+        avatarUrl: null as string | null,
+        permissions: new Set<PermissionCode>(me.permissions),
+      };
     },
     enabled: Boolean(claims),
   });

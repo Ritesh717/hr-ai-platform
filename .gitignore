@@ -28,3 +28,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# graphify knowledge-graph output (generated, regenerate with /graphify)
+graphify-out/

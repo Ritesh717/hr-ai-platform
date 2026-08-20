@@ -3,19 +3,30 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useDepartments, useEmployees } from "@/features/employees/api";
+import { useCreateEmployee, useDepartments, useEmployees } from "@/features/employees/api";
 import { getEmployeeColumns } from "@/features/employees/columns";
+import { EmployeeCreateDialog } from "@/features/employees/employee-create-dialog";
+import { NO_DEPARTMENT } from "@/features/employees/schema";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 import { DataTable } from "@/components/patterns/data-table";
 import { ErrorState } from "@/components/patterns/error-state";
 
 export function EmployeesDirectoryScreen() {
   const router = useRouter();
+  const push = useToast();
+  const { data: currentUser } = useCurrentUser();
   const { data: employees, isLoading, isError, refetch } = useEmployees();
   const { data: departments } = useDepartments();
+  const createEmployee = useCreateEmployee();
   const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const canCreate = currentUser?.permissions.has("employee.write") ?? false;
 
   const departmentsById = useMemo(
     () => Object.fromEntries((departments ?? []).map((department) => [department.id, department.name])),
@@ -38,7 +49,11 @@ export function EmployeesDirectoryScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Employees" description={`${employees?.length ?? 0} people across the organization`} />
+      <PageHeader
+        title="Employees"
+        description={`${employees?.length ?? 0} people across the organization`}
+        actions={canCreate ? <Button onClick={() => setCreating(true)}>New employee</Button> : undefined}
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-4">
@@ -66,6 +81,26 @@ export function EmployeesDirectoryScreen() {
           )}
         </CardContent>
       </Card>
+
+      {creating && (
+        <EmployeeCreateDialog
+          departments={departments ?? []}
+          onClose={() => setCreating(false)}
+          onSubmit={async (values) => {
+            await createEmployee.mutateAsync({
+              fullName: values.fullName,
+              email: values.email,
+              password: values.password,
+              jobTitle: values.jobTitle,
+              roleId: values.roleId,
+              departmentId: values.departmentId === NO_DEPARTMENT ? undefined : values.departmentId,
+              hireDate: values.hireDate.toISOString().slice(0, 10),
+              location: values.location || undefined,
+            });
+            push({ title: "Employee created", tone: "success" });
+          }}
+        />
+      )}
     </div>
   );
 }

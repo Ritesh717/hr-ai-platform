@@ -2,8 +2,8 @@ import { apiFetch } from "@/lib/api/client";
 import { setToken } from "@/lib/auth/token";
 
 interface LoginResponse {
-  access_token: string;
-  token_type: string;
+  accessToken: string;
+  tokenType: string;
 }
 
 export async function login(params: {
@@ -14,10 +14,10 @@ export async function login(params: {
   const response = await apiFetch<LoginResponse>("/api/v1/auth/login", {
     method: "POST",
     body: JSON.stringify({
-      tenant_slug: params.tenantSlug,
+      tenantSlug: params.tenantSlug,
       email: params.email,
       password: params.password,
     }),
   });
-  setToken(response.access_token);
+  setToken(response.accessToken);
 }

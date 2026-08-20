@@ -1,45 +1,25 @@
 import { apiFetch } from "@/lib/api/client";
 import type { Employee } from "@/lib/api/types";
 
-interface EmployeeDto {
-  id: string;
-  tenant_id: string;
-  department_id: string | null;
-  manager_id: string | null;
-  email: string;
-  full_name: string;
-  job_title: string;
-  status: Employee["status"];
-  hire_date: string;
-  location: string | null;
-  created_at: string;
-  updated_at: string;
-  role_id: string;
-  role: string;
-}
-
+// The backend serializes DTOs directly (camelCase, no aliasing) — see
+// apps/api/src/modules/employee/dto/employee-response.dto.ts — so response bodies already match
+// the Employee shape exactly, no field-name mapping needed.
 interface EmployeeListResponseDto {
-  items: EmployeeDto[];
+  items: Employee[];
   total: number;
 }
 
-function mapEmployee(dto: EmployeeDto): Employee {
-  return {
-    id: dto.id,
-    tenantId: dto.tenant_id,
-    departmentId: dto.department_id,
-    managerId: dto.manager_id,
-    email: dto.email,
-    fullName: dto.full_name,
-    jobTitle: dto.job_title,
-    status: dto.status,
-    hireDate: dto.hire_date,
-    location: dto.location,
-    createdAt: dto.created_at,
-    updatedAt: dto.updated_at,
-    roleId: dto.role_id,
-    role: dto.role,
-  };
+export interface EmployeeCreateInput {
+  email: string;
+  password: string;
+  fullName: string;
+  jobTitle: string;
+  roleId: string;
+  departmentId?: string;
+  managerId?: string;
+  status?: Employee["status"];
+  hireDate: string; // ISO date (YYYY-MM-DD)
+  location?: string;
 }
 
 export interface EmployeeUpdatePatch {
@@ -53,29 +33,38 @@ export interface EmployeeUpdatePatch {
 
 function toUpdatePayload(patch: EmployeeUpdatePatch): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
-  if (patch.fullName !== undefined) payload.full_name = patch.fullName;
-  if (patch.jobTitle !== undefined) payload.job_title = patch.jobTitle;
-  if (patch.departmentId !== undefined) payload.department_id = patch.departmentId || null;
+  if (patch.fullName !== undefined) payload.fullName = patch.fullName;
+  if (patch.jobTitle !== undefined) payload.jobTitle = patch.jobTitle;
+  if (patch.departmentId !== undefined) payload.departmentId = patch.departmentId || null;
   if (patch.status !== undefined) payload.status = patch.status;
-  if (patch.hireDate !== undefined) payload.hire_date = patch.hireDate.toISOString().slice(0, 10);
+  if (patch.hireDate !== undefined) payload.hireDate = patch.hireDate.toISOString().slice(0, 10);
   if (patch.location !== undefined) payload.location = patch.location || null;
   return payload;
 }
 
 export async function fetchEmployees(): Promise<Employee[]> {
-  const response = await apiFetch<EmployeeListResponseDto>("/api/v1/employees");
-  return response.items.map(mapEmployee);
+  const response = await apiFetch<EmployeeListResponseDto>("/api/v1/employees?limit=200");
+  return response.items;
 }
 
 export async function fetchEmployee(id: string): Promise<Employee> {
-  const dto = await apiFetch<EmployeeDto>(`/api/v1/employees/${id}`);
-  return mapEmployee(dto);
+  return apiFetch<Employee>(`/api/v1/employees/${id}`);
+}
+
+export async function createEmployee(input: EmployeeCreateInput): Promise<Employee> {
+  return apiFetch<Employee>("/api/v1/employees", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function updateEmployee(id: string, patch: EmployeeUpdatePatch): Promise<Employee> {
-  const dto = await apiFetch<EmployeeDto>(`/api/v1/employees/${id}`, {
+  return apiFetch<Employee>(`/api/v1/employees/${id}`, {
     method: "PATCH",
     body: JSON.stringify(toUpdatePayload(patch)),
   });
-  return mapEmployee(dto);
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/employees/${id}`, { method: "DELETE" });
 }
