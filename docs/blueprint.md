@@ -2547,3 +2547,60 @@ templates, the RBAC_MANAGE self-lockout guardrail, the role-in-use delete guardr
 auth model (permissions always resolved fresh from the DB per request, never trusted from the
 token), the employee self-service field-level authorization split, and the structured
 error/logging contracts — is a direct behavioral port, not a reinterpretation.
+
+## 54. Agent runtime decision (Stage 2, story #1)
+
+§6's "Technologies" list (OpenAI Agents SDK for Python) doesn't apply to `apps/api`
+(NestJS/Mongoose). This section records the decision made when Stage 2 actually started.
+
+**Chosen: Vercel AI SDK (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai` + `@ai-sdk/deepseek`),
+hand-rolled around it in `apps/api/src/modules/agent/`.** `AGENT_MODEL_PROVIDER` selects between
+three provider options (`anthropic`, `openai`, `deepseek`) — DeepSeek's chat completions API is
+OpenAI-compatible, and the official `@ai-sdk/deepseek` package (pinned to the same
+`@ai-sdk/provider`/`@ai-sdk/provider-utils` versions already used by the anthropic/openai
+providers) wraps it behind the same `LanguageModel` interface, so it needed no bespoke request
+plumbing — just another `case` in `model/agent-model.provider.ts`'s provider switch and another
+optional `DEEPSEEK_API_KEY` env var.
+
+Options considered:
+
+- **Vercel AI SDK** (chosen) — first-class TypeScript types, a `generateText({ model, tools,
+  stopWhen })` loop that already implements the multi-step tool-calling round trip (model → tool
+  call → tool result → model, repeated until a stop condition), a `tool()` helper that pairs a Zod
+  input schema with an `execute()` function, and swappable model providers (`@ai-sdk/anthropic`,
+  `@ai-sdk/openai`, more later) behind one `LanguageModel` interface — so the provider is an env
+  var, not a rewrite. It also ships `ai/test`'s `MockLanguageModelV*` test doubles, which is what
+  makes the agent's tool-calling loop unit-testable without a real API key or network call (see
+  `employee-agent.service.spec.ts`).
+- **Hand-rolled loop directly on the Anthropic/OpenAI SDKs** — rejected: would mean re-implementing
+  the same multi-step tool-call loop, JSON-schema-from-Zod conversion, and streaming plumbing the
+  AI SDK already provides, for no architectural benefit at this stage.
+- **LangChain.js** — rejected for now: heavier abstraction (chains/agents/memory) than a single
+  tool-calling agent needs per CLAUDE.md rule 7 ("don't reach for multi-agent architecture early");
+  revisit only if/when Stage 10's supervisor work needs graph/state semantics LangChain.js's
+  LangGraph offers that a hand-rolled orchestrator doesn't.
+
+Design choices this implies for `apps/api/src/modules/agent/`:
+
+- **The agent never touches Mongo.** `EmployeeAgentService.chat()` calls `generateText()` with a
+  tool set built from `AgentToolDefinition[]` (`tools/agent-tool.ts`) — each definition's
+  `handler` is expected to call a domain service (`EmployeeService`, `LeaveService`, ...), never a
+  repository or Mongoose model directly (CLAUDE.md rule 1).
+- **The authorization layer, not the LLM, decides.** `buildToolSet()` wraps every tool's
+  `execute()` with a `requirePermission(context.actorPermissions, def.requiredPermission)` check
+  before the tool's own handler runs — in exactly one place, so no individual tool author can skip
+  it (CLAUDE.md rule 3).
+- **Model construction is lazy, not DI-eager.** `model/agent-model.provider.ts`'s
+  `resolveAgentModel()` is a plain function of `AgentModelConfig`, called fresh inside
+  `chat()` — not memoized behind a NestJS provider constructed at module-init time. This lets the
+  whole app boot (every non-agent route keeps working) with no model API key configured; a missing
+  key surfaces loudly, at the first `chat()` call, instead of crashing the process at startup.
+- **Prompts are versioned files.** `prompts/employee-agent/v1.md`, loaded and cached by
+  `EmployeeAgentPromptService` (`AGENT_PROMPT_VERSION` env var selects the version); a prompt
+  change is a new version file plus an env bump, never an edit to a shipped version's content
+  (CLAUDE.md rule 8, blueprint §31).
+- **`apps/agent_service/`** (an empty `agents/`, `tools/`, `policies/`, `prompts/` scaffold from
+  the initial monorepo layout) is **not used** — agent code lives inside `apps/api/src/modules/
+  agent/` per CLAUDE.md's instruction to hand-build new `apps/api` modules following the existing
+  Controller → Service → Repository shape, one module among the others rather than a separate
+  service. `apps/agent_service/` is dead scaffold; a later stage may repurpose or remove it.

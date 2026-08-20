@@ -28,6 +28,20 @@ export const envSchema = z.object({
   JWT_ALGORITHM: z.string().default('HS256'),
   JWT_EXPIRES_MINUTES: z.coerce.number().default(480),
   CORS_ALLOW_ORIGINS: jsonStringArray,
+  // Agent runtime (Stage 2, story #1: see docs/blueprint.md §54 "Agent runtime decision").
+  // Provider/model are env-driven, never hardcoded, so a deployment can switch models without a
+  // code change. API keys are optional at the schema level because the app must still boot (and
+  // every non-agent route must still work) without them configured; EmployeeAgentService fails
+  // loudly, at call time, if the selected provider's key is missing.
+  AGENT_MODEL_PROVIDER: z.enum(['anthropic', 'openai', 'deepseek']).default('anthropic'),
+  AGENT_MODEL_NAME: z.string().default('claude-3-5-haiku-20241022'),
+  AGENT_PROMPT_VERSION: z.string().default('v1'),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  // DeepSeek's chat completions API is OpenAI-compatible, so it's resolved via
+  // @ai-sdk/openai-compatible pointed at DeepSeek's base URL rather than a bespoke SDK — see
+  // model/agent-model.provider.ts.
+  DEEPSEEK_API_KEY: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

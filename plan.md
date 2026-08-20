@@ -25,7 +25,7 @@ is still an open decision — see the note in `CLAUDE.md`'s "Backend implementat
 | Stage | Adds | Status |
 |---|---|---|
 | 1 | FastAPI + PostgreSQL + SQLAlchemy + Alembic + Auth + Employee CRUD | ✅ done (now under `apps/deprecated/api/`) |
-| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ⏳ next |
+| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ⏳ in progress (story #1 done) |
 | 3 | RAG + pgvector + Policy Agent | not started |
 | 4 | Leave Agent + human approval + audit logs (first action-taking agent) | not started |
 | 5 | Expense Agent + document processing (OCR/extraction) | not started |
@@ -218,6 +218,26 @@ Re-verified after the `apps/api-node` → `apps/api` rename and the Python backe
   blueprint §1, §51); LangGraph is introduced only where explicit graph/state semantics earn their
   keep (blueprint suggests this becomes relevant around Stage 4+/10). **This assumed a Python
   backend** — now that `apps/api` is Node/NestJS and Python is gone outside the frozen
-  `apps/deprecated/api/` snapshot, Stage 2 needs an explicit decision: a JS/TS agent framework
-  (e.g. the OpenAI Agents SDK's JS port, Vercel AI SDK) against `apps/api`, or reintroducing a
-  Python service for agent work specifically. Not yet decided — don't assume either direction.
+  `apps/deprecated/api/` snapshot, Stage 2 needed an explicit decision, made in story #1: the
+  **Vercel AI SDK** (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/openai`), hand-rolled around it in
+  `apps/api/src/modules/agent/` rather than a separate agent service. Rationale and design deltas
+  recorded in `docs/blueprint.md` §54.
+
+## Stage 2 — Employee Agent (`apps/api/src/modules/agent/`)
+
+- [x] Story #1 — Agent runtime decision + scaffold: Vercel AI SDK chosen (see blueprint §54);
+      `EmployeeAgentService` (tool-calling loop via `generateText`/`stepCountIs`), an empty
+      `AgentToolDefinition[]` registry (`tools/employee-agent.tools.ts`) ready for stories #2/#3,
+      env-driven model provider/name config (`AGENT_MODEL_PROVIDER` ∈ `anthropic`/`openai`/
+      `deepseek`, `AGENT_MODEL_NAME`, one of `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`/
+      `DEEPSEEK_API_KEY`, all optional at boot — fails loudly at first `chat()` call instead), and
+      a versioned system prompt (`prompts/employee-agent/v1.md`,
+      `AGENT_PROMPT_VERSION` selects which). `POST /api/v1/agent/employee/chat` (JWT-guarded) is
+      the request/response contract the frontend will call. No-tool round trip verified against
+      `ai/test`'s `MockLanguageModelV3` in `employee-agent.service.spec.ts` (no real API key/
+      network call needed for CI).
+- [ ] Story #2 — Employee & org read tools (get_employee_profile, get_manager, get_department)
+- [ ] Story #3 — Leave & payroll read tools (get_leave_balance, get_payslip, get_pending_requests)
+- [ ] Story #4 — Authentication propagation into agent tool calls
+- [ ] Story #5 — Agent tracing & OpenTelemetry instrumentation
+- [ ] Story #6 — Evaluation harness and golden dataset for the Employee Agent

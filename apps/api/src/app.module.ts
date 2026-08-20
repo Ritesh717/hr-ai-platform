@@ -5,6 +5,7 @@ import { buildConfig } from './config/configuration';
 import { validateEnv } from './config/env.validation';
 import { LoggerModule } from './common/logging/logger.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { AgentModule } from './modules/agent/agent.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DepartmentModule } from './modules/department/department.module';
@@ -35,6 +36,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
     RbacModule,
     AuditLogModule,
     LeaveModule,
+    AgentModule,
   ],
 })
 export class AppModule implements NestModule {
