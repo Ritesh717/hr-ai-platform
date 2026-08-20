@@ -35,7 +35,10 @@ export type PermissionCode =
   | "department.read"
   | "department.write"
   | "audit_log.read"
-  | "rbac.manage";
+  | "rbac.manage"
+  | "leave.read"
+  | "leave.approve"
+  | "leave.manage";
 
 /** Mirrors apps/api/src/modules/auth/dto/me-response.dto.ts. */
 export interface Me {
@@ -71,4 +74,50 @@ export interface AuditLog {
   resourceId: string;
   extra: Record<string, unknown> | null;
   createdAt: string;
+}
+
+export type LeaveType = "vacation" | "sick" | "personal";
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+/** Mirrors apps/api/src/modules/leave/dto/leave-request-response.dto.ts. */
+export interface LeaveRequest {
+  id: string;
+  tenantId: string;
+  employeeId: string;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+  status: LeaveStatus;
+  reason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Mirrors apps/api/src/modules/leave/dto/leave-balance-response.dto.ts. */
+export interface LeaveBalance {
+  employeeId: string;
+  year: number;
+  allocatedDays: number;
+  usedDays: number;
+  remainingDays: number;
+}
+
+/** Mirrors apps/api/src/modules/leave/dto/leave-team-entry.dto.ts. */
+export interface LeaveTeamEntry {
+  requestId: string;
+  employeeId: string;
+  employeeName: string;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+}
+
+/** Mirrors apps/api/src/modules/leave/dto/holiday-response.dto.ts. */
+export interface Holiday {
+  id: string;
+  tenantId: string;
+  name: string;
+  date: string;
 }

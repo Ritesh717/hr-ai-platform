@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DepartmentModule } from './modules/department/department.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { HealthModule } from './modules/health/health.module';
+import { LeaveModule } from './modules/leave/leave.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 
@@ -33,6 +34,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
     DepartmentModule,
     RbacModule,
     AuditLogModule,
+    LeaveModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -9,6 +9,9 @@ export enum PermissionCode {
   DEPARTMENT_WRITE = 'department.write',
   AUDIT_LOG_READ = 'audit_log.read',
   RBAC_MANAGE = 'rbac.manage',
+  LEAVE_READ = 'leave.read',
+  LEAVE_APPROVE = 'leave.approve',
+  LEAVE_MANAGE = 'leave.manage',
 }
 
 export const ALL_PERMISSION_CODES: PermissionCode[] = Object.values(PermissionCode);
