@@ -1,20 +1,26 @@
 "use client";
 
-import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCreateEmployee, useDepartments, useEmployees } from "@/features/employees/api";
 import { getEmployeeColumns } from "@/features/employees/columns";
 import { EmployeeCreateDialog } from "@/features/employees/employee-create-dialog";
+import {
+  defaultEmployeeFilters,
+  EmployeeFilterBar,
+  EmployeeGridCard,
+  EmployeeMiniTile,
+  filterEmployees,
+} from "@/features/employees/employee-list";
 import { NO_DEPARTMENT } from "@/features/employees/schema";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { DataTable } from "@/components/patterns/data-table";
 import { ErrorState } from "@/components/patterns/error-state";
+import { ListView, ViewModeToggle, type ListViewMode } from "@/components/patterns/list-view";
 
 export function EmployeesDirectoryScreen() {
   const router = useRouter();
@@ -23,7 +29,8 @@ export function EmployeesDirectoryScreen() {
   const { data: employees, isLoading, isError, refetch } = useEmployees();
   const { data: departments } = useDepartments();
   const createEmployee = useCreateEmployee();
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState(defaultEmployeeFilters);
+  const [mode, setMode] = useState<ListViewMode>("list");
   const [creating, setCreating] = useState(false);
 
   const canCreate = currentUser?.permissions.has("employee.write") ?? false;
@@ -33,19 +40,10 @@ export function EmployeesDirectoryScreen() {
     [departments],
   );
 
-  const filtered = useMemo(() => {
-    if (!employees) return [];
-    const query = search.trim().toLowerCase();
-    if (!query) return employees;
-    return employees.filter((employee) => {
-      const departmentName = employee.departmentId ? departmentsById[employee.departmentId] : "";
-      return (
-        employee.fullName.toLowerCase().includes(query) ||
-        (departmentName ?? "").toLowerCase().includes(query) ||
-        employee.jobTitle.toLowerCase().includes(query)
-      );
-    });
-  }, [employees, search, departmentsById]);
+  const filtered = useMemo(
+    () => filterEmployees(employees ?? [], filters, departmentsById),
+    [employees, filters, departmentsById],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,26 +55,34 @@ export function EmployeesDirectoryScreen() {
 
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted" />
-            <Input
-              placeholder="Search by name, title, or department"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-9"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <EmployeeFilterBar employees={employees ?? []} filters={filters} onChange={setFilters} />
+            <ViewModeToggle value={mode} onChange={setMode} />
           </div>
 
           {isError ? (
             <ErrorState description="Couldn't load employees." onRetry={() => refetch()} />
           ) : (
-            <DataTable
-              columns={getEmployeeColumns(departmentsById)}
-              data={filtered}
-              loading={isLoading}
-              emptyTitle="No employees match your search"
-              onRowClick={(employee) => router.push(`/employees/${employee.id}`)}
-              pageSize={8}
+            <ListView
+              mode={mode}
+              items={filtered}
+              getKey={(employee) => employee.id}
+              renderList={() => (
+                <DataTable
+                  columns={getEmployeeColumns(departmentsById)}
+                  data={filtered}
+                  loading={isLoading}
+                  emptyTitle="No employees match your search"
+                  onRowClick={(employee) => router.push(`/employees/${employee.id}`)}
+                  pageSize={8}
+                />
+              )}
+              renderGridCard={(employee) => (
+                <EmployeeGridCard employee={employee} onClick={() => router.push(`/employees/${employee.id}`)} />
+              )}
+              renderMiniTile={(employee) => (
+                <EmployeeMiniTile employee={employee} onClick={() => router.push(`/employees/${employee.id}`)} />
+              )}
             />
           )}
         </CardContent>

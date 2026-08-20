@@ -7,10 +7,12 @@ the full application across all backend stages.
 Visual reference: [`docs/assets/ui-reference-dashboard.png`](docs/assets/ui-reference-dashboard.png)
 — sidebar with sectioned nav, a page header, KPI
 stat cards, a chart card, a data table, a dark "highlight" card, and horizontal progress stats.
-That composition (soft cards on a neutral background, generous radius, one warm accent color,
-avatars everywhere people are referenced) is the direction for every screen below, not just the
-dashboard — it's translated into design tokens and a fixed set of card/table/stat patterns in
-§3–4 so it stays consistent instead of being redrawn per screen.
+That composition's still-true elements (generous radius, one accent color, avatars everywhere
+people are referenced) remain the direction for every screen, but surfaces are now a token-driven
+glass system — translucent panels with blur and glass borders over a decorative gradient backdrop,
+not flat solid cards — defined by the [`modern-glass-ux`](.claude/skills/modern-glass-ux/SKILL.md)
+skill. It's translated into design tokens and a fixed set of card/table/stat patterns in §3–4 so it
+stays consistent instead of being redrawn per screen.
 
 ## 1. Goals & non-negotiables
 
@@ -55,11 +57,24 @@ Semantic names, not raw colors — every component references these, never a lit
 --color-surface-raised      elevated card (e.g. the dark "Upcoming Meeting" card variant)
 --color-border
 --color-text / --color-text-muted
---color-primary / --color-primary-foreground     the one warm accent color, used sparingly
---color-success / --color-warning / --color-danger / --color-info
+--color-primary / --color-primary-foreground     the one accent color, used sparingly
+--color-success / --color-warning / --color-danger / --color-info    standard, recognizable
+                                                                       semantic hues (green/amber/red/teal)
 --radius-sm / --radius-md / --radius-lg / --radius-xl     reference leans generous (lg–xl)
 --shadow-sm / --shadow-md                                  soft, low-opacity elevation only
+
+--color-glass-surface-subtle / --color-glass-surface / --color-glass-surface-strong
+--color-glass-surface-inverse                              always-dark chip, theme-independent (Tooltip)
+--color-glass-border / --color-glass-border-strong
+--color-glass-highlight                                    inset top-edge sheen inside --shadow-glass-md
+--color-overlay-scrim                                       Dialog/Drawer overlay
+--shadow-glass-sm / --shadow-glass-md / --shadow-glass-glow
+--blur-glass-sm / --blur-glass-md / --blur-glass-lg
+--gradient-decorative                                       backdrop blobs behind full-bleed glass screens
 ```
+
+See [`modern-glass-ux`](.claude/skills/modern-glass-ux/SKILL.md) for how these compose into glass
+tiers and which components use which tier.
 
 Light and dark are two token sets swapped via a `data-theme` attribute on `<html>`; a
 `ThemeProvider` + `useTheme()` hook handles persistence and system-preference detection. A
@@ -78,7 +93,7 @@ Four layers. Lower layers know nothing about HR domain concepts; only `features/
 | `Button` | Variants: `primary / secondary / ghost / destructive / link`; sizes `sm/md/lg`; loading state built in (spinner replaces label, width doesn't jump) |
 | `IconButton` | Same variant system as `Button`, square, for toolbar/table-row actions |
 | `Input`, `Textarea`, `Select`, `Combobox`, `DatePicker`, `Checkbox`, `Switch`, `RadioGroup` | Each a thin, token-styled wrapper over a Radix primitive where one exists |
-| `Card` | The single card shell every StatCard/ChartCard/ListCard/etc. builds on — owns radius/shadow/padding tokens once |
+| `Card` | The single card shell every StatCard/ChartCard/ListCard/etc. builds on — owns radius/shadow/padding tokens once; `surface: "glass" \| "glass-strong" \| "solid"` picks the glass tier (see `modern-glass-ux`) |
 | `Badge` | Status pills (leave status, approval status, employee status) — tone-driven (`success/warning/danger/neutral`), not per-screen colors |
 | `Avatar`, `AvatarGroup` | Matches the reference's stacked-avatar meeting/team lists |
 | `Dialog`, `Drawer/Sheet`, `Popover`, `DropdownMenu`, `Tabs`, `Tooltip` | Radix-backed overlays, one set reused for every modal/side-panel/menu in the app |
@@ -96,6 +111,9 @@ Four layers. Lower layers know nothing about HR domain concepts; only `features/
 | `DataTable` | TanStack-Table-backed: sorting, pagination, row actions (`…` menu), empty/loading states built in. Powers Employees, Candidates, Expenses, Audit Log, Approvals. |
 | `StatCard` | The KPI tiles in the reference ("Total Employees 49,229") — icon, label, value, optional delta. |
 | `ChartCard` | `Card` + a Recharts chart + a period selector (`Past 3 months ▾`), matching the reference's "Average KPI Score" card. |
+| `ListView`, `ViewModeToggle` | Domain-agnostic list/grid/minigrid switcher for any item collection — `renderList` takes over entirely for "list" (e.g. an existing `DataTable`), `renderGridCard`/`renderMiniTile` are simple item-mapped layouts. Used by Employees Directory and My Team's team-members block. |
+| `OrgChart` | Renders the current user's immediate org context (manager above, self highlighted, peers beside, direct reports below) from a flat `Employee[]` — no graph library, derived client-side via `managerId`. |
+| `TeamCalendar` | Double-sized sibling of `MiniCalendar` for a manager's team leave view — larger cells/dots/fonts, per-day click handler opening a leave detail modal. Not built as a `MiniCalendar` variant since `MiniCalendar`'s sizing is fully hardcoded. |
 | `ProgressStat` | The horizontal "Working Format" bars — label, value, percentage bar. |
 | `HighlightCard` | The dark elevated card variant (`--color-surface-raised`) for spotlighted content like Upcoming Meetings/Approvals-needing-attention. |
 | `KanbanBoard` / `KanbanCard` | Recruitment pipeline (Stage 9). |
@@ -144,11 +162,16 @@ stage using mocked API responses (§6).
 - My Leave — balance, apply (`Form`), history (`DataTable`)
 - My Payslips — list + view-only detail
 - Policy Library / "Ask HR" — RAG search + chat page (Stage 3)
-- My Team / org chart
+- My Team — org-hierarchy view highlighting the current user (manager above, peers beside, direct
+  reports below), a filterable/view-switchable team-members list, and that user's team leave
+  calendar with a leave detail/approval/edit modal; see section D's "Team Leave Calendar" entry,
+  merged into this same screen. Built (`apps/web/app/(dashboard)/my-team/`,
+  `apps/web/features/team/my-team-screen.tsx`).
 
 ### D. Manager views (Stage 4+)
 - Approvals Center — generic queue (leave, expense, others) using the same `ApprovalRequestCard` pattern as in chat, so approving from the inbox and approving from the copilot look identical
-- Team Leave Calendar
+- Team Leave Calendar — folded into "My Team" (§C) rather than a standalone screen; manager-only
+  approve/reject actions still gate on `leave.approve` within that page's leave-detail modal.
 - Team Performance table (mirrors the reference's Employees table, with a performance bar column)
 
 ### E. Expense (Stage 5)
@@ -247,7 +270,7 @@ apps/web/
 
 ## 9. Repo skills for this plan
 
-Three skills in `.claude/skills/` keep the rules above structural rather than remembered by hand:
+Skills in `.claude/skills/` keep the rules above structural rather than remembered by hand:
 
 - **new-ui-component** — scaffolds a `components/ui`/`patterns`/`layout` piece: token-only
   styling, Radix-backed where interactive, container-driven sizing.
@@ -255,6 +278,9 @@ Three skills in `.claude/skills/` keep the rules above structural rather than re
   loading/empty/error states, uses `ConfirmDialog`/`ApprovalRequestCard` for high-impact actions.
 - **new-response-block** — adds a new `ResponseRenderer` block type so a new agent capability gets
   a chat renderer without touching the chat shell.
+- **modern-glass-ux** — the app's visual direction: which components get which translucent glass
+  tier, the decorative backdrop glass needs to read as glass, and the contrast/motion rules that go
+  with it — keeps every new card/overlay consistent with the rest instead of eyeballed per screen.
 
 `phase-gate` also checks UI stages (`--ui-stage F4`, checking §6/§8 here) in addition to backend
 stages.

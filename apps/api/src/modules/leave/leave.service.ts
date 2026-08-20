@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { NotFoundError, ValidationAppError } from '../../common/errors/app.error';
+import { AuthorizationError, NotFoundError, ValidationAppError } from '../../common/errors/app.error';
 import { Employee, EmployeeDocument } from '../employee/schemas/employee.schema';
 import { requirePermission } from '../rbac/authorization';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { HolidayCreateDto } from './dto/holiday-create.dto';
 import { LeaveBalanceResponseDto } from './dto/leave-balance-response.dto';
 import { LeaveRequestCreateDto } from './dto/leave-request-create.dto';
+import { LeaveRequestUpdateDto } from './dto/leave-request-update.dto';
 import { LeaveTeamEntryDto } from './dto/leave-team-entry.dto';
 import { daysBetweenInclusive } from './leave-dates.util';
 import { HolidayRepository } from './holiday.repository';
@@ -65,12 +66,43 @@ export class LeaveService {
   async updateStatus(
     requestId: string,
     status: LeaveStatus,
-    params: { tenantId: string; actorPermissions: ReadonlySet<PermissionCode> },
+    comment: string | undefined,
+    params: { tenantId: string; actorId: string; actorPermissions: ReadonlySet<PermissionCode> },
   ): Promise<LeaveRequestDocument> {
     requirePermission(params.actorPermissions, PermissionCode.LEAVE_APPROVE);
     const request = await this.leaveRequestRepository.getById(requestId, params.tenantId);
     if (!request) throw new NotFoundError(`Leave request ${requestId} not found`);
     request.status = status;
+    request.approverId = new Types.ObjectId(params.actorId);
+    request.approverComment = comment ?? null;
+    request.respondedAt = new Date();
+    return this.leaveRequestRepository.save(request);
+  }
+
+  async editRequest(
+    requestId: string,
+    payload: LeaveRequestUpdateDto,
+    params: { tenantId: string; actorId: string },
+  ): Promise<LeaveRequestDocument> {
+    const request = await this.leaveRequestRepository.getById(requestId, params.tenantId);
+    if (!request) throw new NotFoundError(`Leave request ${requestId} not found`);
+    if (request.employeeId.toString() !== params.actorId) {
+      throw new AuthorizationError('You can only edit your own leave requests');
+    }
+    if (request.status !== LeaveStatus.PENDING) {
+      throw new ValidationAppError('Only pending requests can be edited');
+    }
+
+    const startDate = new Date(payload.startDate);
+    const endDate = new Date(payload.endDate);
+    if (endDate < startDate) {
+      throw new ValidationAppError('endDate must not be before startDate');
+    }
+
+    request.type = payload.type;
+    request.startDate = startDate;
+    request.endDate = endDate;
+    request.reason = payload.reason ?? null;
     return this.leaveRequestRepository.save(request);
   }
 
@@ -103,7 +135,11 @@ export class LeaveService {
     };
   }
 
-  async getTeamLeave(params: { tenantId: string; actorId: string; status?: LeaveStatus }): Promise<LeaveTeamEntryDto[]> {
+  async getTeamLeave(params: {
+    tenantId: string;
+    actorId: string;
+    statuses?: LeaveStatus[];
+  }): Promise<LeaveTeamEntryDto[]> {
     const reports = await this.employeeModel
       .find({ tenantId: params.tenantId, managerId: params.actorId })
       .select('_id fullName')
@@ -114,7 +150,7 @@ export class LeaveService {
     const requests = await this.leaveRequestRepository.listForEmployees({
       tenantId: params.tenantId,
       employeeIds: reports.map((employee) => employee._id),
-      status: params.status,
+      statuses: params.statuses,
     });
 
     return requests.map((request) => ({
@@ -125,6 +161,11 @@ export class LeaveService {
       startDate: request.startDate,
       endDate: request.endDate,
       days: daysBetweenInclusive(request.startDate, request.endDate),
+      status: request.status,
+      reason: request.reason,
+      approverId: request.approverId ? request.approverId.toString() : null,
+      approverComment: request.approverComment ?? null,
+      respondedAt: request.respondedAt ?? null,
     }));
   }
 

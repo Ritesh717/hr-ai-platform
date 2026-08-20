@@ -26,7 +26,7 @@ export function AppShell({
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className="flex h-dvh w-full bg-bg">
+    <div className="glass-backdrop flex h-dvh w-full">
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">

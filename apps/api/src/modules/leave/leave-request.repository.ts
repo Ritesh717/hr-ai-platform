@@ -41,18 +41,18 @@ export class LeaveRequestRepository {
   }
 
   // Powers /leave/team: leave belonging to a given set of direct-report employee ids, filtered
-  // by status (defaults to approved — the calendar view; the manager approvals view passes
-  // 'pending' explicitly).
+  // by status (defaults to approved — the calendar view; other callers pass one or more statuses
+  // explicitly, e.g. ['pending'] for the approvals view or ['pending', 'approved'] for My Team).
   listForEmployees(params: {
     tenantId: string | Types.ObjectId;
     employeeIds: (string | Types.ObjectId)[];
-    status?: LeaveStatus;
+    statuses?: LeaveStatus[];
   }): Promise<LeaveRequestDocument[]> {
     return this.model
       .find({
         tenantId: params.tenantId,
         employeeId: { $in: params.employeeIds },
-        status: params.status ?? LeaveStatus.APPROVED,
+        status: { $in: params.statuses ?? [LeaveStatus.APPROVED] },
       })
       .sort({ startDate: 1 })
       .exec();

@@ -38,8 +38,23 @@ export class LeaveRequest {
   @Prop({ type: String, maxlength: 500, default: null })
   reason: string | null;
 
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Employee', default: null })
+  approverId: Types.ObjectId | null;
+
+  @Prop({ type: String, maxlength: 500, default: null })
+  approverComment: string | null;
+
+  @Prop({ type: Date, default: null })
+  respondedAt: Date | null;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);
+
+const LEAVE_STATUS_VALUES = new Set<string>(Object.values(LeaveStatus));
+
+export function isLeaveStatus(value: string): value is LeaveStatus {
+  return LEAVE_STATUS_VALUES.has(value);
+}

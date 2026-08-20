@@ -74,6 +74,85 @@ unchanged — authorization lives in domain services, not controllers or the LLM
 explicit on every query; audit logging, human-in-the-loop, and prompt hygiene rules don't depend
 on which backend they attach to.
 
+## Common commands
+
+Infra (needed before running the backend or its e2e tests):
+
+```bash
+docker compose up -d mongo mongo-rs-init redis   # Mongo as a single-node replica set (rs0) — required for Mongoose transactions
+```
+
+Backend (`apps/api/`):
+
+```bash
+npm install
+npm run start:dev            # nest start --watch, http://localhost:3001
+npm run build                # nest build
+npm run lint                 # eslint src/scripts/test
+npm test                     # jest unit tests (*.spec.ts, co-located with source)
+npm run test:watch
+npm run test:e2e             # jest -e2e config, apps/api/test/*.e2e-spec.ts, needs mongo+redis up
+npx jest path/to/file.spec.ts                                   # single unit test
+npx jest --config ./test/jest-e2e.json path/to/file.e2e-spec.ts # single e2e test
+npm run sync-indexes
+npm run bootstrap-tenant -- --name "Acme Corp" --slug acme --admin-email admin@acme.io --admin-password "..." --admin-name "Admin User"
+npm run seed-demo-org -- --tenant-slug globex   # 7 departments, 150 employees, 4-level hierarchy
+```
+
+Frontend (`apps/web/`):
+
+```bash
+npm install
+npm run dev     # http://localhost:3000 -> redirects to /dashboard; runs against mock data (lib/api/)
+npm run build
+npm run lint
+```
+
+## Architecture — `apps/api`
+
+- Every module under `src/modules/` (auth, tenant, employee, department, rbac, leave, audit-log,
+  health) follows **Controller → Service → Repository → Mongoose schema**. Controllers hold no
+  business logic or authorization checks; services enforce rules and call repositories for
+  persistence — the same shape as the Agent → Tool → Domain Service → Repository rule above, one
+  layer down.
+- Every query is tenant-scoped (`tenantId` threaded through repository calls). Multi-step writes
+  (e.g. `TenantService.bootstrap`, `EmployeeService`'s write+audit-log flows) use Mongoose
+  transactions, which is why `docker-compose.yml` runs Mongo as a replica set even for local dev.
+  `test/tenant-isolation.e2e-spec.ts` exists specifically to guard against cross-tenant leaks.
+- Authorization is RBAC: permissions are `PermissionCode` enum values
+  (`modules/rbac/constants/permission-code.enum.ts`), checked via `requirePermission`/
+  `hasPermission` (`modules/rbac/authorization.ts`) at the top of service methods — never in
+  controllers, never left to a decorator alone. See `employee.service.ts` for the pattern.
+- `common/auth` — JWT strategy/guard, password hashing. `common/errors/app.error.ts` — typed error
+  hierarchy (`AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, …)
+  mapped to HTTP responses by `common/errors/http-exception.filter.ts`. `common/logging` — pino
+  wiring.
+- Comments like `// Mirrors domain/employee/service.py's EmployeeService.` point at the equivalent
+  code in `apps/deprecated/api/` for design lineage — read-only reference, never runnable (see
+  "Backend implementations" above).
+
+## Architecture — `apps/web`
+
+- Next.js App Router. Route groups `app/(auth)/` and `app/(dashboard)/` separate the
+  unauthenticated login flow from the authenticated shell (`components/layout/app-shell.tsx`,
+  `sidebar.tsx`, `top-bar.tsx`).
+- Each screen pairs a thin route file under `app/(dashboard)/<screen>/` with its implementation in
+  `features/<screen>/` (data fetching, local state) — see `features/{dashboard,employees,roles,
+  time-off,audit-log,departments}`.
+- `components/ui/` = foundation primitives, mostly Radix-based (dialog, dropdown-menu, popover,
+  toast, tooltip, drawer, card…). `components/patterns/` = composed patterns built from primitives
+  (e.g. `highlight-card`). `components/layout/` = nav/shell chrome. `components/chat/` = the agent
+  chat surface for when agent work lands. Never build a one-off component inline in a screen — use
+  the `new-ui-component` skill.
+- Design tokens live in `lib/theme/tokens.css` + `app/globals.css`. The "modern glass UX" visual
+  system (translucent surfaces, blur tiers, glass borders, decorative backdrop) is applied via the
+  `modern-glass-ux` skill — don't hand-roll glass effects inline.
+- The frontend currently runs against mock data (`lib/api/`) ahead of the backend being wired up —
+  see `ui-plan.md` §6 for build order and which screens are mocked vs. live.
+- `apps/web/CLAUDE.md` re-exports `apps/web/AGENTS.md`, which Next.js itself regenerates on
+  `next dev` — it flags breaking API/convention changes for the installed Next.js version. Read it
+  before writing App Router code, since training data may be stale for this version.
+
 ## Working conventions
 
 - Prefer running the actual code/tests over eyeballing them before calling something done —

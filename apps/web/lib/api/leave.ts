@@ -23,10 +23,24 @@ export async function createLeaveRequest(input: LeaveRequestCreateInput): Promis
   });
 }
 
-export async function updateLeaveStatus(id: string, status: LeaveStatus): Promise<LeaveRequest> {
+export async function updateLeaveStatus(id: string, status: LeaveStatus, comment?: string): Promise<LeaveRequest> {
   return apiFetch<LeaveRequest>(`/api/v1/leave/requests/${id}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, comment }),
+  });
+}
+
+export interface LeaveRequestUpdateInput {
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+}
+
+export async function updateLeaveRequest(id: string, input: LeaveRequestUpdateInput): Promise<LeaveRequest> {
+  return apiFetch<LeaveRequest>(`/api/v1/leave/requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
   });
 }
 
@@ -35,8 +49,8 @@ export async function fetchLeaveBalance(employeeId?: string): Promise<LeaveBalan
   return apiFetch<LeaveBalance>(`/api/v1/leave/balance${query}`);
 }
 
-export async function fetchTeamLeave(status?: LeaveStatus): Promise<LeaveTeamEntry[]> {
-  const query = status ? `?status=${status}` : "";
+export async function fetchTeamLeave(statuses?: LeaveStatus[]): Promise<LeaveTeamEntry[]> {
+  const query = statuses && statuses.length > 0 ? `?status=${statuses.join(",")}` : "";
   return apiFetch<LeaveTeamEntry[]>(`/api/v1/leave/team${query}`);
 }
 

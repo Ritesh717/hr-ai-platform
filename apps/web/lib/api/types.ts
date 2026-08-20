@@ -90,6 +90,9 @@ export interface LeaveRequest {
   days: number;
   status: LeaveStatus;
   reason: string | null;
+  approverId: string | null;
+  approverComment: string | null;
+  respondedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -112,6 +115,11 @@ export interface LeaveTeamEntry {
   startDate: string;
   endDate: string;
   days: number;
+  status: LeaveStatus;
+  reason: string | null;
+  approverId: string | null;
+  approverComment: string | null;
+  respondedAt: string | null;
 }
 
 /** Mirrors apps/api/src/modules/leave/dto/holiday-response.dto.ts. */

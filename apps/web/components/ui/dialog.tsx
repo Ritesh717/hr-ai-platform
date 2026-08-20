@@ -16,10 +16,10 @@ export function DialogContent({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 transition-opacity" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-overlay-scrim backdrop-blur-glass-lg backdrop-saturate-150 transition-opacity" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-6 shadow-md focus:outline-none",
+          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-glass-border-strong bg-glass-surface-strong backdrop-blur-glass-lg backdrop-saturate-150 p-6 shadow-glass-md focus:outline-none",
           className,
         )}
         {...props}

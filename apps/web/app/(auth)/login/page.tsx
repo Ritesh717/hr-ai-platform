@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   return (
-    <div className="flex min-h-dvh w-full items-center justify-center bg-bg p-4">
+    <div className="glass-backdrop flex min-h-dvh w-full items-center justify-center p-4">
       <Card className="w-full max-w-sm p-8">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">

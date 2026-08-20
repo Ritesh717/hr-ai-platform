@@ -1,19 +1,21 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils/cn";
 
+const surfaceClasses = {
+  glass:
+    "bg-glass-surface text-text border-glass-border backdrop-blur-glass-md backdrop-saturate-150 shadow-glass-sm transition-shadow hover:shadow-glass-md",
+  "glass-strong":
+    "bg-glass-surface-strong text-surface-raised-foreground border-glass-border-strong backdrop-blur-glass-lg backdrop-saturate-150 shadow-glass-md",
+  solid: "bg-surface text-text border-border shadow-sm",
+} as const;
+
 export const Card = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { raised?: boolean }
->(({ className, raised, ...props }, ref) => (
+  React.HTMLAttributes<HTMLDivElement> & { surface?: keyof typeof surfaceClasses }
+>(({ className, surface = "glass", ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "rounded-xl border border-border shadow-sm",
-      raised
-        ? "bg-surface-raised text-surface-raised-foreground border-transparent"
-        : "bg-surface text-text",
-      className,
-    )}
+    className={cn("rounded-xl border", surfaceClasses[surface], className)}
     {...props}
   />
 ));

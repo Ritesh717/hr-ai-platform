@@ -14,7 +14,7 @@ export default function DashboardGroupLayout({ children }: { children: React.Rea
   return (
     <AuthGuard>
       {isLoading || !currentUser ? (
-        <div className="flex h-dvh w-full items-center justify-center bg-bg p-6">
+        <div className="glass-backdrop flex h-dvh w-full items-center justify-center p-6">
           <Skeleton className="h-9 w-64" />
         </div>
       ) : (

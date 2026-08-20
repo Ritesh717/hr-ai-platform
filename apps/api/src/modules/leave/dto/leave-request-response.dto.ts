@@ -11,6 +11,9 @@ export class LeaveRequestResponseDto {
   days: number;
   status: LeaveStatus;
   reason: string | null;
+  approverId: string | null;
+  approverComment: string | null;
+  respondedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -25,6 +28,9 @@ export class LeaveRequestResponseDto {
       days: daysBetweenInclusive(request.startDate, request.endDate),
       status: request.status,
       reason: request.reason,
+      approverId: request.approverId ? request.approverId.toString() : null,
+      approverComment: request.approverComment ?? null,
+      respondedAt: request.respondedAt ?? null,
       createdAt: request.createdAt as Date,
       updatedAt: request.updatedAt as Date,
     };
