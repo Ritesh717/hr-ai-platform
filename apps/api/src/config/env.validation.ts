@@ -38,8 +38,8 @@ export const envSchema = z.object({
   AGENT_PROMPT_VERSION: z.string().default('v1'),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
-  // DeepSeek's chat completions API is OpenAI-compatible, so it's resolved via
-  // @ai-sdk/openai-compatible pointed at DeepSeek's base URL rather than a bespoke SDK — see
+  // Resolved via the official @ai-sdk/deepseek provider package (DeepSeek's chat completions API
+  // is OpenAI-compatible, but @ai-sdk/deepseek already wraps it — no bespoke SDK needed) — see
   // model/agent-model.provider.ts.
   DEEPSEEK_API_KEY: z.string().optional(),
 });
