@@ -18,11 +18,19 @@ export interface EmployeeAgentChatParams {
 export interface EmployeeAgentToolCallSummary {
   name: string;
   input: unknown;
-  // Populated from the matching tool-result step (see chat()) — undefined only if the model's
-  // tool-call loop was cut short (stopWhen) before the result came back. Story #5 (tracing) is
-  // the proper home for a full agent trace; this is the minimum this story's own acceptance
-  // criteria need ("tool call + result appear in the agent trace").
+  // Populated from the matching 'tool-result' content part (see chat()) — undefined when the
+  // call instead produced a 'tool-error' part (below) or when the model's tool-call loop was cut
+  // short (stopWhen) before either came back. Story #5 (tracing) is the proper home for a full
+  // agent trace; this is the minimum this story's own acceptance criteria need ("tool call +
+  // result appear in the agent trace").
   output?: unknown;
+  // Populated from the matching 'tool-error' content part — set whenever the tool's handler threw
+  // (e.g. an AuthorizationError from a denied permission check). The `ai` SDK's generateText()
+  // catches a thrown execute() and turns it into a 'tool-error' content part instead of a
+  // 'tool-result' one; step.toolResults only ever contains 'tool-result' parts, so without this
+  // the trace would silently show output: undefined for exactly the case — an authorization
+  // denial — that matters most to capture ("tool call + result appear in the trace").
+  error?: unknown;
 }
 
 export interface EmployeeAgentChatResult {
@@ -99,12 +107,25 @@ export class EmployeeAgentService {
       stopWhen: stepCountIs(EmployeeAgentService.MAX_TOOL_STEPS),
     });
 
-    const toolCalls = result.steps.flatMap((step) =>
-      step.toolCalls.map((call) => {
-        const matchingResult = step.toolResults.find((r) => r.toolCallId === call.toolCallId);
-        return { name: call.toolName, input: call.input, output: matchingResult?.output };
-      }),
-    );
+    const toolCalls = result.steps.flatMap((step) => {
+      // step.toolResults only contains 'tool-result' content parts — a thrown execute() produces
+      // a 'tool-error' part instead, which toolResults silently excludes. Read from step.content
+      // (the full set of content parts for the step) so a thrown tool error still shows up here
+      // with enough information to know it failed, rather than surfacing as output: undefined
+      // indistinguishable from "no result yet".
+      const outcomeByCallId = new Map<string, { output?: unknown; error?: unknown }>();
+      for (const part of step.content) {
+        if (part.type === 'tool-result') {
+          outcomeByCallId.set(part.toolCallId, { output: part.output });
+        } else if (part.type === 'tool-error') {
+          outcomeByCallId.set(part.toolCallId, { error: part.error });
+        }
+      }
+      return step.toolCalls.map((call) => {
+        const outcome = outcomeByCallId.get(call.toolCallId);
+        return { name: call.toolName, input: call.input, output: outcome?.output, error: outcome?.error };
+      });
+    });
 
     return {
       reply: result.text,

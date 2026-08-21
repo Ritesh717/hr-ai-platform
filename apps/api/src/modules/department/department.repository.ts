@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { escapeRegExp } from '../../common/utils/regex';
 import { Department, DepartmentDocument } from './schemas/department.schema';
 
 // Mirrors domain/department/repository.py's DepartmentRepository.
@@ -18,7 +19,7 @@ export class DepartmentRepository {
   // shares a name this deterministically returns the first match by insertion order rather than
   // erroring, same tradeoff the rest of this module already accepts for duplicate names.
   getByName(name: string, tenantId: string | Types.ObjectId): Promise<DepartmentDocument | null> {
-    const pattern = new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const pattern = new RegExp(`^${escapeRegExp(name)}$`, 'i');
     return this.model.findOne({ name: pattern, tenantId }).exec();
   }
 

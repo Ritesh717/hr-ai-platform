@@ -4,6 +4,6 @@
   "question": "Who is my manager?",
   "actor": "employee",
   "expectedTool": "get_manager",
-  "expectedToolArgs": {},
-  "notes": "employeeId must be omitted — the tool defaults to the caller's own manager from agent context, never an LLM-supplied id."
+  "expectedToolArgs": { "employeeId": null },
+  "notes": "employeeId must be omitted (asserted via the null sentinel in run-agent-eval.ts's argsSubsetMatch) — the tool defaults to the caller's own manager from agent context, never an LLM-supplied id. An empty {} here would be vacuously true and wouldn't catch a regression where the model started guessing an id."
 }

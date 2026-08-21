@@ -79,6 +79,73 @@ describe('EmployeeAgentService', () => {
     expect(result.toolCalls).toEqual([]);
   });
 
+  it('records a thrown tool error (e.g. an authorization denial) in toolCalls instead of silently dropping it', async () => {
+    // Regression test: step.toolResults (the `ai` SDK's own summary of successful tool calls)
+    // only contains 'tool-result' content parts, not 'tool-error' ones — a thrown execute()
+    // produces the latter. Before the fix, chat() matched against toolResults alone, so a denied
+    // tool call showed up as `output: undefined`, indistinguishable from "no result yet" and
+    // silently failing the "tool call + result appear in the trace" acceptance criterion for
+    // exactly the safety-relevant case (an authorization denial).
+    let callCount = 0;
+    const mockModel = new MockLanguageModelV3({
+      doGenerate: async () => {
+        callCount += 1;
+        if (callCount === 1) {
+          return {
+            finishReason: { unified: 'tool-calls' as const, raw: undefined },
+            usage: {
+              inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
+              outputTokens: { total: 5, text: 5, reasoning: undefined },
+            },
+            content: [
+              {
+                type: 'tool-call' as const,
+                toolCallId: 'call_1',
+                toolName: 'get_department',
+                input: JSON.stringify({ name: 'Engineering' }),
+              },
+            ],
+            warnings: [],
+          };
+        }
+        return {
+          finishReason: { unified: 'stop' as const, raw: undefined },
+          usage: {
+            inputTokens: { total: 12, noCache: 12, cacheRead: undefined, cacheWrite: undefined },
+            outputTokens: { total: 8, text: 8, reasoning: undefined },
+          },
+          content: [{ type: 'text' as const, text: "I'm not able to look up that department for you." }],
+          warnings: [],
+        };
+      },
+    });
+    jest.spyOn(modelProvider, 'resolveAgentModel').mockReturnValue(mockModel);
+
+    // get_department declares requiredPermission: DEPARTMENT_READ, enforced by buildToolSet()
+    // before the handler (and therefore the real DepartmentService) ever runs — no need to mock
+    // DepartmentService's behavior, only that it satisfies the constructor's type.
+    const service = new EmployeeAgentService(
+      fakeConfigService(),
+      new EmployeeAgentPromptService(),
+      fakeEmployeeService,
+      fakeDepartmentService,
+    );
+
+    const result = await service.chat({
+      message: "What's the Engineering department's id?",
+      context: {
+        tenantId: 'tenant-1',
+        actorId: 'employee-1',
+        actorPermissions: new Set<PermissionCode>(), // no DEPARTMENT_READ
+      },
+    });
+
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls[0].name).toBe('get_department');
+    expect(result.toolCalls[0].output).toBeUndefined();
+    expect(result.toolCalls[0].error).toBeDefined();
+  });
+
   it('propagates a missing-API-key failure from model resolution instead of masking it', async () => {
     jest.spyOn(modelProvider, 'resolveAgentModel').mockImplementation(() => {
       throw new Error("ANTHROPIC_API_KEY is required when AGENT_MODEL_PROVIDER='anthropic'");

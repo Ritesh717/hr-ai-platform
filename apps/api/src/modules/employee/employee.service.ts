@@ -74,6 +74,13 @@ export class EmployeeService {
   // manager's id — since it's exposed as a natural extension of a lookup the caller was already
   // authorized to make (the REST employee response already exposes the raw managerId; this just
   // resolves it to a record).
+  //
+  // A stale managerId (pointing at a now-deleted employee record) is treated the same as "no
+  // manager on file" rather than a NotFoundError: deleteEmployee() never clears managerId on that
+  // manager's former reports, so "my manager left the company" is an expected, non-exceptional
+  // state for a caller to be in — not a 404-worthy error. Returning null here also matches this
+  // method's own documented "returns null if the employee has no manager" contract that
+  // get_manager (the agent tool) relies on.
   async getManager(
     employeeId: string,
     params: { tenantId: string; actorId: string; actorPermissions: ReadonlySet<PermissionCode> },
@@ -81,8 +88,7 @@ export class EmployeeService {
     const employee = await this.getEmployee(employeeId, params);
     if (!employee.managerId) return null;
     const manager = await this.employeeRepository.getById(employee.managerId, params.tenantId);
-    if (!manager) throw new NotFoundError(`Manager for employee ${employeeId} not found`);
-    return manager;
+    return manager ?? null;
   }
 
   async createEmployee(

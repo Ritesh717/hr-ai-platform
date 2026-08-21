@@ -127,6 +127,32 @@ describe('Employee Agent read tools (real EmployeeService/DepartmentService)', (
       expect(result).toEqual({ manager: null });
     });
 
+    it('returns manager: null (not a NotFoundError) when managerId points at a deleted employee', async () => {
+      // deleteEmployee() never clears managerId on that manager's former reports, so this is a
+      // realistic, non-exceptional state ("my manager left the company") — see
+      // EmployeeService.getManager()'s doc comment.
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const mgr = await manager(ctx, tenant, roles);
+      const report = await employeeUser(ctx, tenant, roles, { managerId: mgr._id });
+
+      const employeeService = ctx.app.get(EmployeeService);
+      await employeeService.deleteEmployee(mgr._id.toString(), {
+        tenantId: tenant._id.toString(),
+        actorId: mgr._id.toString(),
+        actorPermissions: new Set([PermissionCode.EMPLOYEE_DELETE]),
+      });
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: report._id.toString() }),
+      );
+
+      // @ts-expect-error — see above
+      const result = await toolSet.get_manager.execute!({}, {});
+
+      expect(result).toEqual({ manager: null });
+    });
+
     it("rejects looking up another employee's manager without EMPLOYEE_READ", async () => {
       const { tenant, roles } = await createTenantWithRoles(ctx);
       const employee = await employeeUser(ctx, tenant, roles, { email: 'e1@example.com' });
