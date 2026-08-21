@@ -14,8 +14,9 @@ if (typeof window !== "undefined" && !("ResizeObserver" in window)) {
   window.ResizeObserver = ResizeObserverStub;
 }
 
-// jsdom doesn't implement scrollIntoView either — ChatMessageList calls it to keep the latest
-// message in view on new-message arrival.
+// jsdom doesn't implement scrollIntoView either. ChatMessageList itself uses
+// @tanstack/react-virtual's scrollToIndex (not scrollIntoView) to keep the latest message in
+// view, but other components/tests may rely on the native method, so stub it defensively.
 if (typeof window !== "undefined" && !window.HTMLElement.prototype.scrollIntoView) {
   window.HTMLElement.prototype.scrollIntoView = () => {};
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/api/types";
 
 let counter = 0;
@@ -54,6 +54,19 @@ export function useCopilotChat() {
       setIsResponding(false);
       pendingReplyTimeout.current = null;
     }, 900);
+  }, []);
+
+  // Unmount-safety: if the panel unmounts (navigation, logout) while the mock reply timer is
+  // still pending, clear it — otherwise it fires after unmount and calls setMessages/
+  // setIsResponding on a component that's gone, leaking the timer and triggering React's
+  // set-state-on-unmounted-component warning.
+  useEffect(() => {
+    return () => {
+      if (pendingReplyTimeout.current) {
+        clearTimeout(pendingReplyTimeout.current);
+        pendingReplyTimeout.current = null;
+      }
+    };
   }, []);
 
   const stopResponse = useCallback(() => {

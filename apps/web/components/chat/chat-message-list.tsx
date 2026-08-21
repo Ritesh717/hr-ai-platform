@@ -38,11 +38,19 @@ export function ChatMessageList({
     overscan: 6,
   });
 
+  // Keying the re-scroll purely off `rowCount` misses the moment the typing-indicator row is
+  // replaced by the real assistant reply: messages.length +1 (real reply, isResponding now false)
+  // is the same total as messages.length +1 (typing indicator, isResponding still true), so
+  // rowCount alone doesn't change even though the last row's content just did. Track the last
+  // message's identity/content too so a taller-than-estimated reply still pulls the view down.
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageSignal = lastMessage ? `${lastMessage.id}:${lastMessage.content}` : "";
+
   useEffect(() => {
     if (rowCount === 0) return;
     virtualizer.scrollToIndex(rowCount - 1, { align: "end" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-scroll only when the row count changes
-  }, [rowCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-scroll when the row count changes OR the last row's content changes
+  }, [rowCount, lastMessageSignal]);
 
   if (rowCount === 0) {
     return (

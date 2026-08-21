@@ -30,6 +30,7 @@ export function ChatComposer({
   className,
 }: ChatComposerProps) {
   const [draft, setDraft] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const trimmed = draft.trim();
@@ -44,7 +45,12 @@ export function ChatComposer({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    // Guard against IME composition (CJK/Japanese/Korean input, etc.): confirming a composed
+    // string also fires a keydown for Enter, which would otherwise submit the draft mid-
+    // conversion. `isComposing` tracks React's composition events, and `nativeEvent.isComposing`
+    // covers the browsers that report the confirming keydown as still-composing before the
+    // compositionend event lands.
+    if (event.key === "Enter" && !event.shiftKey && !isComposing && !event.nativeEvent.isComposing) {
       event.preventDefault();
       handleSend();
     }
@@ -73,6 +79,8 @@ export function ChatComposer({
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => setIsComposing(true)}
+        onCompositionEnd={() => setIsComposing(false)}
         placeholder={placeholder}
         disabled={disabled}
         rows={1}
