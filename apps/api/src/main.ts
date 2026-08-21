@@ -1,3 +1,7 @@
+import { initTracing } from './tracing';
+// Must be called before any other import that instruments frameworks (HTTP, Mongoose).
+initTracing();
+
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';

@@ -1,0 +1,9 @@
+{
+  "id": "get-pending-requests",
+  "category": "tool_selection",
+  "question": "Do I have any pending leave requests waiting for approval?",
+  "actor": "employee",
+  "expectedTool": "get_pending_requests",
+  "expectedToolArgs": { "employeeId": null },
+  "notes": "employeeId must be omitted — defaults to the caller's own pending requests. A common employee self-service question."
+}

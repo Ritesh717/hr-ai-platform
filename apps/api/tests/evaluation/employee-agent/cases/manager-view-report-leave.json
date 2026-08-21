@@ -1,0 +1,11 @@
+{
+  "id": "manager-view-report-leave",
+  "category": "tool_arguments",
+  "questionTemplate": "Can you check how many leave days employee {{targetEmployeeId}} has left this year?",
+  "actor": "manager",
+  "actorPermissions": ["leave.read"],
+  "requiresTargetEmployeeId": true,
+  "expectedTool": "get_leave_balance",
+  "expectedToolArgsTemplate": { "employeeId": "{{targetEmployeeId}}" },
+  "notes": "A manager with leave.read should be able to query a report's leave balance by passing an explicit employeeId. The runner provides a real targetEmployeeId in the question — verifies the model passes it correctly rather than calling for its own balance."
+}
