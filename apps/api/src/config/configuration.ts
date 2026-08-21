@@ -9,6 +9,12 @@ export interface AppConfig {
   jwtAlgorithm: string;
   jwtExpiresMinutes: number;
   corsAllowOrigins: string[];
+  agentModelProvider: 'anthropic' | 'openai' | 'deepseek';
+  agentModelName: string;
+  agentPromptVersion: string;
+  anthropicApiKey: string | undefined;
+  openaiApiKey: string | undefined;
+  deepseekApiKey: string | undefined;
 }
 
 export function buildConfig(env: EnvConfig): AppConfig {
@@ -21,5 +27,11 @@ export function buildConfig(env: EnvConfig): AppConfig {
     jwtAlgorithm: env.JWT_ALGORITHM,
     jwtExpiresMinutes: env.JWT_EXPIRES_MINUTES,
     corsAllowOrigins: env.CORS_ALLOW_ORIGINS,
+    agentModelProvider: env.AGENT_MODEL_PROVIDER,
+    agentModelName: env.AGENT_MODEL_NAME,
+    agentPromptVersion: env.AGENT_PROMPT_VERSION,
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    openaiApiKey: env.OPENAI_API_KEY,
+    deepseekApiKey: env.DEEPSEEK_API_KEY,
   };
 }

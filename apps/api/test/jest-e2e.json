@@ -4,5 +4,6 @@
   "testEnvironment": "node",
   "testRegex": "test/.*\\.e2e-spec\\.ts$",
   "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+  "transformIgnorePatterns": ["/node_modules/(?!(ai|@ai-sdk|@workflow|eventsource-parser|@standard-schema)/)"],
   "testTimeout": 60000
 }
