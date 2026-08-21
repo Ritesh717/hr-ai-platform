@@ -1,0 +1,9 @@
+{
+  "id": "who-is-my-manager",
+  "category": "tool_selection",
+  "question": "Who is my manager?",
+  "actor": "employee",
+  "expectedTool": "get_manager",
+  "expectedToolArgs": {},
+  "notes": "employeeId must be omitted — the tool defaults to the caller's own manager from agent context, never an LLM-supplied id."
+}

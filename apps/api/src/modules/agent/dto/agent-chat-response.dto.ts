@@ -3,10 +3,12 @@ import { EmployeeAgentChatResult } from '../employee-agent.service';
 export class AgentToolCallResponseDto {
   name: string;
   input: unknown;
+  output: unknown;
 
-  constructor(name: string, input: unknown) {
+  constructor(name: string, input: unknown, output: unknown) {
     this.name = name;
     this.input = input;
+    this.output = output;
   }
 }
 
@@ -28,7 +30,7 @@ export class AgentChatResponseDto {
     dto.promptVersion = result.promptVersion;
     dto.modelProvider = result.modelProvider;
     dto.modelName = result.modelName;
-    dto.toolCalls = result.toolCalls.map((call) => new AgentToolCallResponseDto(call.name, call.input));
+    dto.toolCalls = result.toolCalls.map((call) => new AgentToolCallResponseDto(call.name, call.input, call.output));
     return dto;
   }
 }

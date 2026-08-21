@@ -22,8 +22,23 @@ export interface AgentToolDefinition<INPUT = unknown, OUTPUT = unknown> {
   description: string;
   /** Zod schema the model's tool-call arguments are validated against. */
   inputSchema: z.ZodType<INPUT>;
-  /** Permission the caller must hold — checked by buildToolSet(), never by the model. */
-  requiredPermission: PermissionCode;
+  /**
+   * Permission the caller must hold — checked by buildToolSet() before `handler` runs, never by
+   * the model. Use this for tools whose authorization is a flat "must hold permission X"
+   * check (e.g. get_department -> DEPARTMENT_READ), matching how a domain service method that
+   * unconditionally calls requirePermission() behaves.
+   *
+   * Leave undefined only when `handler` calls straight into a domain-service method that already
+   * implements a *more nuanced* rule than a flat permission gate — e.g.
+   * EmployeeService.getEmployee()'s "self access always allowed, cross-employee access requires
+   * EMPLOYEE_READ" carve-out. Declaring a blanket EMPLOYEE_READ here would make such a tool
+   * *more* restrictive than the equivalent REST endpoint (blocking a base employee from asking
+   * about their own profile) and would be redundant with the check the service already performs
+   * — CLAUDE.md rule 2 has the domain service, not the tool layer, own that decision. This is
+   * still "declaring the permission it requires" per CLAUDE.md rule 3: the declaration is
+   * "no blanket permission — defer entirely to the domain service," not "no authorization."
+   */
+  requiredPermission?: PermissionCode;
   /** Business logic — call a domain service, never a repository/DB client directly. */
   handler: (input: INPUT, context: AgentToolContext) => Promise<OUTPUT>;
 }
@@ -61,7 +76,9 @@ export function buildToolSet(definitions: readonly AnyAgentToolDefinition[], con
       description: def.description,
       inputSchema: def.inputSchema,
       execute: async (input: unknown) => {
-        requirePermission(context.actorPermissions, def.requiredPermission);
+        if (def.requiredPermission) {
+          requirePermission(context.actorPermissions, def.requiredPermission);
+        }
         return def.handler(input, context);
       },
     };

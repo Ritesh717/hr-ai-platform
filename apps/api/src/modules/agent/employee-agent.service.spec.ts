@@ -1,10 +1,20 @@
 import { ConfigService } from '@nestjs/config';
 import { MockLanguageModelV3 } from 'ai/test';
 import { AppConfig } from '../../config/configuration';
+import { DepartmentService } from '../department/department.service';
+import { EmployeeService } from '../employee/employee.service';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { EmployeeAgentService } from './employee-agent.service';
 import * as modelProvider from './model/agent-model.provider';
 import { EmployeeAgentPromptService } from './prompt.service';
+
+// This suite never calls a tool (the mock model always returns text, no tool calls), so
+// EmployeeService/DepartmentService only need to satisfy the constructor's type — they're passed
+// through unused to buildEmployeeAgentTools(). Real tool behavior is covered by
+// tools/employee-agent.tools.spec.ts (mocked services) and test/agent-tools.e2e-spec.ts (real
+// Mongo-backed services).
+const fakeEmployeeService = {} as EmployeeService;
+const fakeDepartmentService = {} as DepartmentService;
 
 // Substitutes the real Anthropic/OpenAI client construction with the `ai` SDK's own test double
 // (MockLanguageModelV3) so this proves the actual tool-calling loop — versioned prompt loading,
@@ -45,7 +55,12 @@ describe('EmployeeAgentService', () => {
     });
     jest.spyOn(modelProvider, 'resolveAgentModel').mockReturnValue(mockModel);
 
-    const service = new EmployeeAgentService(fakeConfigService(), new EmployeeAgentPromptService());
+    const service = new EmployeeAgentService(
+      fakeConfigService(),
+      new EmployeeAgentPromptService(),
+      fakeEmployeeService,
+      fakeDepartmentService,
+    );
 
     const result = await service.chat({
       message: 'Do I have any pending requests?',
@@ -72,6 +87,8 @@ describe('EmployeeAgentService', () => {
     const service = new EmployeeAgentService(
       fakeConfigService({ anthropicApiKey: undefined }),
       new EmployeeAgentPromptService(),
+      fakeEmployeeService,
+      fakeDepartmentService,
     );
 
     await expect(

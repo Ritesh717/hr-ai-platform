@@ -1,0 +1,9 @@
+{
+  "id": "engineering-department-lookup",
+  "category": "tool_arguments",
+  "question": "What department is Engineering, and what's its department id?",
+  "actor": "employee",
+  "expectedTool": "get_department",
+  "expectedToolArgs": { "name": "Engineering" },
+  "notes": "Argument must be the department's name ('Engineering'), not a guessed department id — the agent has no way to know a real Mongo ObjectId from conversation alone."
+}

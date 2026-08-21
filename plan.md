@@ -25,7 +25,7 @@ is still an open decision — see the note in `CLAUDE.md`'s "Backend implementat
 | Stage | Adds | Status |
 |---|---|---|
 | 1 | FastAPI + PostgreSQL + SQLAlchemy + Alembic + Auth + Employee CRUD | ✅ done (now under `apps/deprecated/api/`) |
-| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ⏳ in progress (story #1 done) |
+| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ⏳ in progress (stories #1, #2 done) |
 | 3 | RAG + pgvector + Policy Agent | not started |
 | 4 | Leave Agent + human approval + audit logs (first action-taking agent) | not started |
 | 5 | Expense Agent + document processing (OCR/extraction) | not started |
@@ -236,7 +236,46 @@ Re-verified after the `apps/api-node` → `apps/api` rename and the Python backe
       the request/response contract the frontend will call. No-tool round trip verified against
       `ai/test`'s `MockLanguageModelV3` in `employee-agent.service.spec.ts` (no real API key/
       network call needed for CI).
-- [ ] Story #2 — Employee & org read tools (get_employee_profile, get_manager, get_department)
+- [x] Story #2 — Employee & org read tools: `get_employee_profile`, `get_manager`,
+      `get_department` (`tools/employee-agent.tools.ts`'s `buildEmployeeAgentTools()`), wired to
+      the real `EmployeeService`/`DepartmentService` via `AgentModule` now importing
+      `EmployeeModule`/`DepartmentModule`. Results are mapped through the existing
+      `EmployeeResponseDto`/`DepartmentResponseDto` (never a raw Mongoose document — those carry
+      `hashedPassword`).
+      - `get_employee_profile`/`get_manager` take an optional `employeeId` (default: caller's own
+        id from `AgentToolContext`, never LLM-supplied for the default case) and delegate
+        authorization entirely to `EmployeeService.getEmployee()`'s existing self-or-EMPLOYEE_READ
+        gate — this required making `AgentToolDefinition.requiredPermission` **optional**
+        (`tools/agent-tool.ts`): declaring a blanket `EMPLOYEE_READ` there would have made the
+        tool *more* restrictive than the REST endpoint it wraps (blocking a base employee, who
+        doesn't hold `EMPLOYEE_READ` by default, from asking about their own profile). See that
+        file's doc comment for the full rationale; still satisfies CLAUDE.md rule 3 — the
+        declaration is "no blanket permission, defer to the domain service," not "no
+        authorization."
+      - `get_manager` is new business logic in `EmployeeService.getManager()` (not a REST wrapper
+        — there's no `GET .../manager` REST route), built on the existing `managerId` field;
+        reuses `getEmployee()`'s gate on the target employee, then resolves the manager record
+        directly rather than re-gating it (documented in the method's own comment).
+      - `get_department` takes a `name` (case-insensitive exact match, new
+        `DepartmentRepository.getByName()`/`DepartmentService.getDepartmentByName()`) since the
+        model has no way to know a department's ObjectId; keeps `buildToolSet()`'s central
+        `DEPARTMENT_READ` gate since `DepartmentService` has no self-access nuance to defer to.
+      - System prompt bumped to `prompts/employee-agent/v2.md` (`v1.md` left untouched, per
+        CLAUDE.md rule 8) describing the three new tools; `AGENT_PROMPT_VERSION` default is now
+        `v2`.
+      - `EmployeeAgentChatResult.toolCalls[].output` now carries the matching tool result
+        alongside `name`/`input` — the minimal "tool call + result visible" this story's own
+        acceptance criteria need; full OpenTelemetry tracing is story #5's scope, not attempted
+        here.
+      - Golden-dataset cases added under `tests/evaluation/employee-agent/cases/` (tool_selection,
+        tool_arguments, safety) plus a minimal standalone runner
+        (`scripts/run-agent-eval.ts`, `npm run eval:employee-agent`) per the `agent-eval-case`
+        skill — deliberately not wired into `npm test`/CI since it makes a real, non-deterministic
+        model API call per case; a fuller harness is story #6's scope.
+      - Tests: `tools/employee-agent.tools.spec.ts` (mocked services, unit level) and
+        `test/agent-tools.e2e-spec.ts` (real Mongo-backed `EmployeeService`/`DepartmentService`,
+        proving cross-employee/cross-permission rejection matches REST exactly) — 9/9 new e2e
+        cases pass alongside the existing 39.
 - [ ] Story #3 — Leave & payroll read tools (get_leave_balance, get_payslip, get_pending_requests)
 - [ ] Story #4 — Authentication propagation into agent tool calls
 - [ ] Story #5 — Agent tracing & OpenTelemetry instrumentation
