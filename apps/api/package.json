@@ -14,7 +14,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "bootstrap-tenant": "ts-node -r tsconfig-paths/register scripts/bootstrap-tenant.ts",
     "sync-indexes": "ts-node -r tsconfig-paths/register scripts/sync-indexes.ts",
-    "seed-demo-org": "ts-node -r tsconfig-paths/register scripts/seed-demo-org.ts"
+    "seed-demo-org": "ts-node -r tsconfig-paths/register scripts/seed-demo-org.ts",
+    "eval:employee-agent": "ts-node -r tsconfig-paths/register scripts/run-agent-eval.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.40",

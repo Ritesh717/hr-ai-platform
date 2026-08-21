@@ -3,10 +3,17 @@ import { EmployeeAgentChatResult } from '../employee-agent.service';
 export class AgentToolCallResponseDto {
   name: string;
   input: unknown;
+  output: unknown;
+  // Set instead of `output` when the tool's handler threw (e.g. an authorization denial) — see
+  // EmployeeAgentToolCallSummary's doc comment for why the underlying `ai` SDK step data doesn't
+  // put this in `output`.
+  error?: unknown;
 
-  constructor(name: string, input: unknown) {
+  constructor(name: string, input: unknown, output: unknown, error?: unknown) {
     this.name = name;
     this.input = input;
+    this.output = output;
+    this.error = error;
   }
 }
 
@@ -28,7 +35,9 @@ export class AgentChatResponseDto {
     dto.promptVersion = result.promptVersion;
     dto.modelProvider = result.modelProvider;
     dto.modelName = result.modelName;
-    dto.toolCalls = result.toolCalls.map((call) => new AgentToolCallResponseDto(call.name, call.input));
+    dto.toolCalls = result.toolCalls.map(
+      (call) => new AgentToolCallResponseDto(call.name, call.input, call.output, call.error),
+    );
     return dto;
   }
 }

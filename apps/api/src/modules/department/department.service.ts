@@ -42,6 +42,19 @@ export class DepartmentService {
     return department;
   }
 
+  // Same authorization as getDepartment(), keyed by name instead of id — used by the Employee
+  // Agent's get_department tool, which only ever receives a name from the model (it has no way
+  // to know a department's ObjectId).
+  async getDepartmentByName(
+    name: string,
+    params: { tenantId: string; actorPermissions: ReadonlySet<PermissionCode> },
+  ): Promise<DepartmentDocument> {
+    requirePermission(params.actorPermissions, PermissionCode.DEPARTMENT_READ);
+    const department = await this.departmentRepository.getByName(name, params.tenantId);
+    if (!department) throw new NotFoundError(`Department '${name}' not found`);
+    return department;
+  }
+
   async createDepartment(params: {
     tenantId: string;
     actorPermissions: ReadonlySet<PermissionCode>;

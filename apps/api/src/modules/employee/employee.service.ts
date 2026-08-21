@@ -65,6 +65,32 @@ export class EmployeeService {
     return employee;
   }
 
+  // Resolves an employee's manager from the existing managerId reporting-hierarchy field — no
+  // new persistence, just a read that follows one relationship. Reuses getEmployee()'s
+  // self-or-EMPLOYEE_READ gate on the *target* employee (so "who is my manager" needs no extra
+  // permission, matching self-profile access; looking up someone else's manager needs
+  // EMPLOYEE_READ same as looking up their profile would). The manager's own basic record is
+  // then resolved directly — not re-gated by a second self/EMPLOYEE_READ check against the
+  // manager's id — since it's exposed as a natural extension of a lookup the caller was already
+  // authorized to make (the REST employee response already exposes the raw managerId; this just
+  // resolves it to a record).
+  //
+  // A stale managerId (pointing at a now-deleted employee record) is treated the same as "no
+  // manager on file" rather than a NotFoundError: deleteEmployee() never clears managerId on that
+  // manager's former reports, so "my manager left the company" is an expected, non-exceptional
+  // state for a caller to be in — not a 404-worthy error. Returning null here also matches this
+  // method's own documented "returns null if the employee has no manager" contract that
+  // get_manager (the agent tool) relies on.
+  async getManager(
+    employeeId: string,
+    params: { tenantId: string; actorId: string; actorPermissions: ReadonlySet<PermissionCode> },
+  ): Promise<EmployeeDocument | null> {
+    const employee = await this.getEmployee(employeeId, params);
+    if (!employee.managerId) return null;
+    const manager = await this.employeeRepository.getById(employee.managerId, params.tenantId);
+    return manager ?? null;
+  }
+
   async createEmployee(
     payload: EmployeeCreateDto,
     params: { tenantId: string; actorId: string; actorPermissions: ReadonlySet<PermissionCode> },

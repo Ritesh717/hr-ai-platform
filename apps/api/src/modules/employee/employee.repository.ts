@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, FilterQuery, Model, Types } from 'mongoose';
+import { escapeRegExp } from '../../common/utils/regex';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { RoleDocument } from '../rbac/schemas/role.schema';
 import { Employee, EmployeeDocument } from './schemas/employee.schema';
@@ -42,7 +43,7 @@ export class EmployeeRepository {
     const { tenantId, offset, limit, search } = params;
     const filter: FilterQuery<EmployeeDocument> = { tenantId };
     if (search) {
-      const pattern = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const pattern = new RegExp(escapeRegExp(search), 'i');
       filter.$or = [{ fullName: pattern }, { jobTitle: pattern }];
     }
     const [items, total] = await Promise.all([
