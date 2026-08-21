@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { IconButton } from "@/components/ui/icon-button";
@@ -11,6 +12,7 @@ import {
   DrawerDescription,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useCopilotChat } from "@/features/chat/use-copilot-chat";
 
 export function AppShell({
   breadcrumb,
@@ -24,6 +26,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [chatOpen, setChatOpen] = useState(false);
+  const { messages, isResponding, sendMessage, stopResponse } = useCopilotChat();
 
   return (
     <div className="glass-backdrop flex h-dvh w-full">
@@ -34,7 +37,7 @@ export function AppShell({
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
 
-      {/* Global copilot slot — wired to the Employee Agent in UI stage F2. */}
+      {/* Global copilot slot — chat shell built in UI stage F2 (story #65); real Employee Agent wiring is issue #67. */}
       <IconButton
         label="Open HR Copilot"
         intent="primary"
@@ -46,11 +49,25 @@ export function AppShell({
       </IconButton>
 
       <Drawer open={chatOpen} onOpenChange={setChatOpen}>
-        <DrawerContent>
-          <DrawerTitle>HR Copilot</DrawerTitle>
-          <DrawerDescription>
-            The chat panel lands in UI stage F2, wired to the Employee Agent (backend Stage 2).
+        <DrawerContent className="flex flex-col p-0">
+          {/* Visually hidden — ChatPanel renders its own visible title/subtitle in the header row. */}
+          <DrawerTitle className="sr-only">HR Copilot</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Chat with the HR Copilot about your profile, leave, manager, or payslips.
           </DrawerDescription>
+          {/*
+            Local-only mock state (features/chat/use-copilot-chat.ts) — not wired to the real
+            Employee Agent endpoint yet. That wiring is issue #67; this proves ChatPanel works as
+            the persistent right-side Drawer host per ui-plan.md §4.4.
+          */}
+          <ChatPanel
+            title="HR Copilot"
+            subtitle="Ask about your profile, leave, manager, or payslips"
+            messages={messages}
+            isResponding={isResponding}
+            onSendMessage={sendMessage}
+            onStopResponse={stopResponse}
+          />
         </DrawerContent>
       </Drawer>
     </div>
