@@ -41,10 +41,12 @@ stays consistent instead of being redrawn per screen.
 | Style variants | class-variance-authority (cva) | Typed variant props (`intent`, `size`, `tone`) instead of ad hoc className strings |
 | Forms | react-hook-form + zod | One schema drives validation *and* (via derived/picked types) the view-only form's field list, so edit and view modes can't drift apart |
 | Tables | TanStack Table (headless) | Sorting/pagination/column logic is reusable; presentation stays in our `DataTable` |
+| List virtualization | TanStack Virtual (headless) | `ChatMessageList`'s virtualized scroll — dynamic row-height measurement, same headless-family choice as Table/Query (decided in story #65) |
 | Server/agent state | TanStack Query | One consistent loading/error/retry/streaming pattern for every API and chat call instead of per-screen `fetch` + `useState` |
 | Charts | Recharts, wrapped in `ChartCard` | Screens never import the charting lib directly — swappable later without touching pages |
 | Icons | lucide-react | Tree-shakeable thin-line icons, matches the reference's icon weight |
 | Motion | CSS transitions by default; Framer Motion only for the chat panel/drawers if actually needed | Keeps the bundle light — motion isn't app-wide by default |
+| Component tests | Jest + React Testing Library (`next/jest`, `jsdom`) | First test infra added to `apps/web` (story #65); mirrors `apps/api`'s Jest-based unit tests so both apps share one test runner mental model. `npm test`/`npm run test:watch` |
 
 ## 3. Design tokens (theme system)
 
@@ -144,6 +146,16 @@ reaches the user, so it's built once and reused, not rebuilt per agent.
 | `ChatTypingIndicator` | Streaming/"thinking" state. |
 | `ResponseRenderer` | **The piece that makes agents extensible without redesigning the chat.** Agent responses are a list of typed content blocks; `ResponseRenderer` maps each block type to a renderer via a registry: `TextBlock` (markdown), `CitationBlock` (source doc + version, expandable — RAG grounding from blueprint §7), `ToolCallBlock` (collapsed "used `get_leave_balance`" trace, expandable — transparency into what the agent did), `DataTableBlock` / `ChartBlock` (structured tool results, e.g. analytics agent output), `ApprovalRequestCard` (human-in-the-loop action awaiting approval — Approve/Reject inline, blueprint §34), `ActionConfirmationCard` (e.g. "Leave request created ✅" linking to the record), `RefusalBlock` (guardrail refusal, styled distinctly from a normal error). Adding a new agent capability later means registering a new block renderer, not touching the chat shell. |
 
+`ChatPanel`/`ChatMessageList`/`ChatMessage`/`ChatComposer`/`ChatTypingIndicator` shipped in story
+#65, built against local/mock state only (`features/chat/use-copilot-chat.ts` powers the AppShell
+drawer's demo conversation — not wired to the real `POST /api/v1/agent/employee/chat` endpoint,
+that's issue #67). `ChatMessage`'s content rendering is a minimal plain-text placeholder pending
+`ResponseRenderer` (issue #66); it takes a `renderContent` override so #66 is a drop-in, not a
+chat-shell redesign. Open decision made in story #65: `ChatMessageList`'s "virtualized message
+scroll" requirement is implemented with `@tanstack/react-virtual` (headless, dynamic row-height
+measurement) — added as a new dependency, consistent with the existing `@tanstack/react-query`/
+`@tanstack/react-table` choices in §2's stack table, rather than hand-rolling windowing.
+
 ## 5. Screens, by section
 
 Each maps to the backend stage that makes it real (blueprint §46); UI work can run ahead of that
@@ -218,7 +230,7 @@ idle waiting on the backend.
 | UI Stage | Delivers | Backend stage it pairs with | Status |
 |---|---|---|---|
 | F1 | Tokens, theme provider, all §4.1/4.3 primitives, `AppShell`, Login, Dashboard shell (mock data), Employees Directory + Detail | Stage 1 | 🟡 built, pending visual QA |
-| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 | not started |
+| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 | 🟡 chat shell done (story #65), `ResponseRenderer` + real backend wiring open (#66, #67) |
 | F3 | Policy Library / "Ask HR" page | Stage 3 | not started |
 | F4 | My Leave apply/history, Approvals Center, `ApprovalRequestCard` | Stage 4 | not started |
 | F5 | Expense submit/list/approve incl. file upload + OCR confirm step | Stage 5 | not started |

@@ -129,3 +129,40 @@ export interface Holiday {
   name: string;
   date: string;
 }
+
+// --- Agent chat (components/chat/) ---
+//
+// Unlike the DTOs above, this isn't a direct mirror of a backend response — the chat surface
+// keeps conversation history client-side (in memory only, blueprint §28) while
+// apps/api/src/modules/agent/agent.controller.ts's `POST /api/v1/agent/employee/chat` is still a
+// single-turn, non-streaming request/response contract (see AgentChatResponseDto). `ChatMessage`
+// is the local view model the frontend renders; wiring it to the real endpoint (issue #67) means
+// mapping each request/response pair into one user message + one assistant message here, and
+// later widening `status` to cover token-by-token streaming without changing this shape.
+export type ChatMessageRole = "user" | "assistant" | "system";
+
+/** Lifecycle of a single message bubble — drives ChatComposer's disable/re-enable and typing indicator. */
+export type ChatMessageStatus = "pending" | "complete" | "error";
+
+/**
+ * One trace entry for a tool the agent called while producing a reply — mirrors
+ * AgentToolCallResponseDto (`name`, `input`) from apps/api's agent module. Rendered today as part
+ * of ChatMessage's placeholder content; issue #66's ResponseRenderer replaces this with a proper
+ * expandable ToolCallBlock.
+ */
+export interface ChatToolCallTrace {
+  name: string;
+  input: unknown;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  /** Plain text for now — content-block rendering is issue #66's ResponseRenderer, not this story. */
+  content: string;
+  createdAt: string; // ISO timestamp
+  status?: ChatMessageStatus;
+  toolCalls?: ChatToolCallTrace[];
+  authorName?: string;
+  avatarUrl?: string | null;
+}
