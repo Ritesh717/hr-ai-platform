@@ -276,7 +276,41 @@ Re-verified after the `apps/api-node` → `apps/api` rename and the Python backe
         `test/agent-tools.e2e-spec.ts` (real Mongo-backed `EmployeeService`/`DepartmentService`,
         proving cross-employee/cross-permission rejection matches REST exactly) — 9/9 new e2e
         cases pass alongside the existing 39.
-- [ ] Story #3 — Leave & payroll read tools (get_leave_balance, get_payslip, get_pending_requests)
-- [ ] Story #4 — Authentication propagation into agent tool calls
-- [ ] Story #5 — Agent tracing & OpenTelemetry instrumentation
-- [ ] Story #6 — Evaluation harness and golden dataset for the Employee Agent
+- [x] Story #3 — Leave & payroll read tools: `get_leave_balance`, `get_pending_requests`,
+      `get_payslip` (stub — no payroll module yet, returns `{status:'unavailable'}` with no salary
+      data; documented in the tool and guarded by `payslip-no-raw-data-leak.json` eval case).
+      `LeaveService` injected into `EmployeeAgentService`; `LeaveModule` added to `AgentModule`
+      imports. Tests: 6 new unit cases in `tools/employee-agent.tools.spec.ts`; 7 new e2e cases
+      in `test/agent-tools.e2e-spec.ts` (self-access, LEAVE_READ gate, pending-only filter,
+      payslip stub, no raw salary fields).
+- [x] Story #4 — Authentication propagation: JWT→`AgentToolContext` wiring confirmed implemented
+      in Story #1/#2 (controller uses `@UseGuards(JwtAuthGuard)` + `@CurrentEmployee()`).
+      Added `test/agent-chat.e2e-spec.ts` with explicit HTTP-level coverage: 401 with no
+      Authorization header, 401 with malformed JWT, 422 on missing `message` body.
+- [x] Story #5 — OTel tracing: `src/tracing.ts` (idempotent `initTracing()`, `NodeSDK` +
+      `ConsoleSpanExporter`); `main.ts` calls `initTracing()` before NestJS bootstrap. `chat()`
+      wrapped in a custom `employee_agent.chat` span carrying only safe attributes (tenant.id,
+      actor.id, agent metadata — never message content per blueprint §28). `generateText()`
+      receives `experimental_telemetry` with `recordInputs/recordOutputs: false`.
+- [x] Story #6 — Eval harness: 9 golden-dataset cases under
+      `tests/evaluation/employee-agent/cases/` covering all 6 tools + 4 safety scenarios
+      (prompt injection role escalation, tenant switch, unauthorized cross-employee, payslip
+      no-raw-data-leak). Runner at `scripts/run-agent-eval.ts` (`npm run eval:employee-agent`),
+      not wired into CI (requires a real LLM API key).
+
+### Stage 2 UI stories (F2)
+
+- [x] Story #65 — Chat surface foundation: `ChatPanel`, `ChatMessageList`, `ChatComposer`
+      (mocked, building block for #66–#67).
+- [x] Story #66 — `ResponseRenderer` + block registry: `TextBlock` (react-markdown/skipHtml),
+      `ToolCallBlock` (collapsible input trace), `RefusalBlock` (alert styling). Registry-based
+      dispatch in `response-renderer.tsx` — future block types (`CitationBlock`, `DataTableBlock`)
+      add a REGISTRY entry only.
+- [x] Story #67 — Chat drawer wired to live endpoint: `lib/api/agent.ts`
+      (`postAgentChat`, `toToolCallTrace`), `useCopilotChat` replaced with real
+      `POST /api/v1/agent/employee/chat` call + AbortController, `AppShell` passes
+      `renderMessageContent={(msg) => <ResponseRenderer message={msg} />}`.
+- [ ] Story #68 — End-to-end validation (Definition of Done): code parts done (e2e chat
+      endpoint coverage in `test/agent-chat.e2e-spec.ts`, this plan.md update); **manual
+      browser pass with real LLM API key not yet run** — requires Docker + a configured
+      `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` in a real dev environment.
