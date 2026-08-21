@@ -1,0 +1,9 @@
+{
+  "id": "get-own-profile",
+  "category": "tool_selection",
+  "question": "What is my employee profile? Can you show me my details?",
+  "actor": "employee",
+  "expectedTool": "get_employee_profile",
+  "expectedToolArgs": { "employeeId": null },
+  "notes": "employeeId must be omitted — the tool defaults to the caller's own profile from agent context. An empty {} would be vacuously true; the null sentinel asserts the key is absent, catching a regression where the model starts guessing its own id."
+}

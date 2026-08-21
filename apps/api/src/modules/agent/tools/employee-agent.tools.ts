@@ -3,32 +3,32 @@ import { DepartmentService } from '../../department/department.service';
 import { DepartmentResponseDto } from '../../department/dto/department-response.dto';
 import { EmployeeResponseDto } from '../../employee/dto/employee-response.dto';
 import { EmployeeService } from '../../employee/employee.service';
+import { LeaveRequestResponseDto } from '../../leave/dto/leave-request-response.dto';
+import { LeaveService } from '../../leave/leave.service';
+import { LeaveStatus } from '../../leave/schemas/leave-request.schema';
 import { PermissionCode } from '../../rbac/constants/permission-code.enum';
 import { AnyAgentToolDefinition, defineAgentTool } from './agent-tool';
 
-// Story #2 (Stage 2 — Employee & org read tools). Three read-only tools wired to the existing
-// EmployeeService/DepartmentService — no repository/DB access happens here (CLAUDE.md rule 1),
-// and no tool decides authorization itself (CLAUDE.md rule 2/3): each `handler` below calls the
-// same domain-service method a controller would, and either buildToolSet() enforces a flat
-// requiredPermission first (get_department) or the domain service's own self-vs-permission logic
-// is the sole gate (get_employee_profile, get_manager — see agent-tool.ts's requiredPermission
-// doc for why those two are safe to leave undefined).
+// Stories #2 and #3 (Stage 2 — Employee/org + leave/payroll read tools). Six read-only tools
+// wired to existing domain services — no repository/DB access here (CLAUDE.md rule 1), no tool
+// decides authorization itself (CLAUDE.md rule 2/3): each handler calls the same domain-service
+// method a controller would.
 //
-// Tool results are mapped through the same *Response DTOs the REST controllers return, never the
-// raw Mongoose documents — a raw Employee document carries hashedPassword, which must never reach
-// the model's context window (blueprint §28: never expose secrets/unredacted HR data).
+// Tool results use the same *Response DTOs the REST controllers return, never raw Mongoose
+// documents — a raw Employee document carries hashedPassword, which must never reach the model's
+// context window (blueprint §28: never expose secrets/unredacted HR data). get_payslip is the most
+// sensitive: its result is summarized (no raw salary/net amounts) before entering the context
+// window (blueprint §28, issue #3 security requirement).
 //
-// Employee ids are only ever taken from `context` (the caller's own identity) or from an
-// `employeeId`/`name` argument the model supplies — this file never trusts the model for the
-// caller's own identity, matching the issue's "receives the caller's identity/tenant from agent
-// context, not from LLM-supplied arguments" requirement.
+// Caller identity is always taken from `context`, not from LLM-supplied arguments.
 export interface BuildEmployeeAgentToolsDeps {
   employeeService: EmployeeService;
   departmentService: DepartmentService;
+  leaveService: LeaveService;
 }
 
 export function buildEmployeeAgentTools(deps: BuildEmployeeAgentToolsDeps): AnyAgentToolDefinition[] {
-  const { employeeService, departmentService } = deps;
+  const { employeeService, departmentService, leaveService } = deps;
 
   const getEmployeeProfile = defineAgentTool({
     name: 'get_employee_profile',
@@ -105,5 +105,100 @@ export function buildEmployeeAgentTools(deps: BuildEmployeeAgentToolsDeps): AnyA
     },
   });
 
-  return [getEmployeeProfile, getManager, getDepartment];
+  const getLeaveBalance = defineAgentTool({
+    name: 'get_leave_balance',
+    description:
+      "Get an employee's leave balance for a given year (allocated, used, and remaining days). " +
+      "Omit employeeId to get the current user's own balance — this is the common case. " +
+      'Omit year to use the current calendar year.',
+    inputSchema: z.object({
+      employeeId: z
+        .string()
+        .optional()
+        .describe("The employee's id. Omit to get the current user's own balance."),
+      year: z
+        .number()
+        .int()
+        .min(2000)
+        .max(2100)
+        .optional()
+        .describe('The calendar year (e.g. 2025). Defaults to the current year.'),
+    }),
+    // No blanket permission: LeaveService.getBalance() allows self-access and gates cross-employee
+    // access on LEAVE_READ — same self-or-permission pattern as EmployeeService.getEmployee().
+    handler: async (input: { employeeId?: string; year?: number }, context) => {
+      return leaveService.getBalance({
+        tenantId: context.tenantId,
+        actorId: context.actorId,
+        actorPermissions: context.actorPermissions,
+        employeeId: input.employeeId,
+        year: input.year,
+      });
+    },
+  });
+
+  const getPendingRequests = defineAgentTool({
+    name: 'get_pending_requests',
+    description:
+      "Get an employee's pending leave requests. Omit employeeId to get the current user's own " +
+      "pending requests — this is the common case. Managers with leave.read can query a specific " +
+      "report's pending requests by passing employeeId.",
+    inputSchema: z.object({
+      employeeId: z
+        .string()
+        .optional()
+        .describe("The employee's id. Omit to get the current user's own pending requests."),
+    }),
+    // LeaveService.listRequests() enforces LEAVE_READ for cross-employee queries.
+    handler: async (input: { employeeId?: string }, context) => {
+      const requests = await leaveService.listRequests({
+        tenantId: context.tenantId,
+        actorId: context.actorId,
+        actorPermissions: context.actorPermissions,
+        employeeId: input.employeeId,
+      });
+      const pending = requests.filter((r) => r.status === LeaveStatus.PENDING);
+      return { requests: pending.map(LeaveRequestResponseDto.fromDocument), total: pending.length };
+    },
+  });
+
+  // get_payslip — no dedicated payroll module exists yet (issue #3 decision: stub this tool
+  // rather than defer, so the agent surface is consistent). A follow-up epic will replace this
+  // with a real payroll read model. The stub returns summary metadata only — never raw salary/net
+  // amounts in the context window (blueprint §28: never log/expose unredacted HR documents).
+  const getPayslip = defineAgentTool({
+    name: 'get_payslip',
+    description:
+      'Get a summary of a payslip for a given month and year. Returns availability status and ' +
+      'period metadata. Full payslip details (gross, net, deductions) require the payroll module, ' +
+      'which is not yet available in this version.',
+    inputSchema: z.object({
+      month: z
+        .number()
+        .int()
+        .min(1)
+        .max(12)
+        .describe('The month (1–12).'),
+      year: z
+        .number()
+        .int()
+        .min(2000)
+        .max(2100)
+        .describe('The calendar year (e.g. 2025).'),
+    }),
+    // Self-only access for now: payslip data is always the caller's own — no cross-employee
+    // payslip lookup even with elevated permissions until the real payroll module enforces it.
+    handler: async (input: { month: number; year: number }, context) => {
+      return {
+        employeeId: context.actorId,
+        period: { month: input.month, year: input.year },
+        status: 'unavailable' as const,
+        message:
+          'Detailed payslip data (gross pay, deductions, net pay) is not yet available. ' +
+          'The payroll module is a planned future feature. Please contact HR for payslip details.',
+      };
+    },
+  });
+
+  return [getEmployeeProfile, getManager, getDepartment, getLeaveBalance, getPendingRequests, getPayslip];
 }

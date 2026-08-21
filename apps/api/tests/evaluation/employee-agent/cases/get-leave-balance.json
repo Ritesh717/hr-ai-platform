@@ -1,0 +1,9 @@
+{
+  "id": "get-leave-balance",
+  "category": "tool_selection",
+  "question": "How many annual leave days do I have remaining?",
+  "actor": "employee",
+  "expectedTool": "get_leave_balance",
+  "expectedToolArgs": { "employeeId": null },
+  "notes": "employeeId must be omitted — the tool defaults to the caller's own balance. This is the canonical leave-balance question from blueprint §30."
+}

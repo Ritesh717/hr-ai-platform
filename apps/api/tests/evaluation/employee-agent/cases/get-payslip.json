@@ -1,0 +1,9 @@
+{
+  "id": "get-payslip",
+  "category": "tool_selection",
+  "question": "Can you show me my payslip for June 2025?",
+  "actor": "employee",
+  "expectedTool": "get_payslip",
+  "expectedToolArgs": { "month": 6, "year": 2025 },
+  "notes": "Verifies the model maps the natural-language period ('June 2025') to the correct month/year integers and calls get_payslip rather than hallucinating payslip data directly."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "get-leave-balance-current-year",
+  "category": "tool_arguments",
+  "question": "How many vacation days have I used this year?",
+  "actor": "employee",
+  "expectedTool": "get_leave_balance",
+  "expectedToolArgs": { "employeeId": null },
+  "notes": "'this year' should map to the default (year omitted), not a hardcoded year. Verifies the model doesn't inject a specific year when 'current year' is implied."
+}

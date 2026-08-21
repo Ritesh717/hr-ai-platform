@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { generateText, stepCountIs } from 'ai';
 import { AppConfig } from '../../config/configuration';
 import { DepartmentService } from '../department/department.service';
 import { EmployeeService } from '../employee/employee.service';
+import { LeaveService } from '../leave/leave.service';
 import { AgentModelConfig, resolveAgentModel } from './model/agent-model.provider';
 import { EmployeeAgentPromptService } from './prompt.service';
 import { AnyAgentToolDefinition, buildToolSet } from './tools/agent-tool';
@@ -68,8 +70,9 @@ export class EmployeeAgentService {
     private readonly promptService: EmployeeAgentPromptService,
     employeeService: EmployeeService,
     departmentService: DepartmentService,
+    leaveService: LeaveService,
   ) {
-    this.tools = buildEmployeeAgentTools({ employeeService, departmentService });
+    this.tools = buildEmployeeAgentTools({ employeeService, departmentService, leaveService });
   }
 
   async chat(params: EmployeeAgentChatParams): Promise<EmployeeAgentChatResult> {
@@ -81,6 +84,42 @@ export class EmployeeAgentService {
       deepseekApiKey: this.configService.get('deepseekApiKey', { infer: true }),
     };
     const promptVersion = this.configService.get('agentPromptVersion', { infer: true });
+
+    // Story #5: root span covering the entire agent run. Child spans — one per LLM call step —
+    // are created automatically by generateText()'s experimental_telemetry option (see below).
+    // Attributes follow blueprint §24: trace/span metadata only, never sensitive payload content.
+    const tracer = trace.getTracer('employee-agent', EmployeeAgentService.AGENT_VERSION);
+    return tracer.startActiveSpan('employee_agent.chat', async (span) => {
+      span.setAttributes({
+        'agent.name': 'employee-agent',
+        'agent.version': EmployeeAgentService.AGENT_VERSION,
+        'agent.prompt_version': promptVersion,
+        'model.provider': modelConfig.agentModelProvider,
+        'model.name': modelConfig.agentModelName,
+        'tenant.id': params.context.tenantId,
+        // user.id is safe metadata per blueprint §24; message content is never recorded here
+        'user.id': params.context.actorId,
+      });
+
+      try {
+        const result = await this.runChat(params, modelConfig, promptVersion);
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.setAttribute('agent.tool_calls_count', result.toolCalls.length);
+        return result;
+      } catch (err) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: err instanceof Error ? err.message : String(err) });
+        throw err;
+      } finally {
+        span.end();
+      }
+    });
+  }
+
+  private async runChat(
+    params: EmployeeAgentChatParams,
+    modelConfig: AgentModelConfig,
+    promptVersion: string,
+  ): Promise<EmployeeAgentChatResult> {
     const prompt = this.promptService.load(promptVersion);
     const model = resolveAgentModel(modelConfig);
     const tools = buildToolSet(this.tools, params.context);
@@ -98,21 +137,26 @@ export class EmployeeAgentService {
     const result = await generateText({
       model,
       system: prompt.content,
-      // Untrusted-content rule (CLAUDE.md #5): tool output/RAG chunks would flow back to the
-      // model via the tool-result channel generateText manages internally, never folded into
-      // `system` here. This scaffold only has a single user turn; multi-turn history is out of
-      // scope until a real chat surface lands.
+      // Untrusted-content rule (CLAUDE.md #5): tool output/RAG chunks flow back to the model via
+      // the tool-result channel generateText manages internally, never folded into `system` here.
       messages: [{ role: 'user', content: params.message }],
       tools,
       stopWhen: stepCountIs(EmployeeAgentService.MAX_TOOL_STEPS),
+      // Story #5: per-step LLM call spans (model, latency, token usage) recorded automatically
+      // by the ai SDK's OTel integration. recordInputs/recordOutputs are false: message content
+      // and tool I/O must not appear in trace attributes (blueprint §24/§28).
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'employee-agent',
+        recordInputs: false,
+        recordOutputs: false,
+      },
     });
 
     const toolCalls = result.steps.flatMap((step) => {
       // step.toolResults only contains 'tool-result' content parts — a thrown execute() produces
       // a 'tool-error' part instead, which toolResults silently excludes. Read from step.content
-      // (the full set of content parts for the step) so a thrown tool error still shows up here
-      // with enough information to know it failed, rather than surfacing as output: undefined
-      // indistinguishable from "no result yet".
+      // so a thrown tool error still shows up here with enough information to know it failed.
       const outcomeByCallId = new Map<string, { output?: unknown; error?: unknown }>();
       for (const part of step.content) {
         if (part.type === 'tool-result') {

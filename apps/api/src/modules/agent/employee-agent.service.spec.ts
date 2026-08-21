@@ -3,18 +3,20 @@ import { MockLanguageModelV3 } from 'ai/test';
 import { AppConfig } from '../../config/configuration';
 import { DepartmentService } from '../department/department.service';
 import { EmployeeService } from '../employee/employee.service';
+import { LeaveService } from '../leave/leave.service';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { EmployeeAgentService } from './employee-agent.service';
 import * as modelProvider from './model/agent-model.provider';
 import { EmployeeAgentPromptService } from './prompt.service';
 
 // This suite never calls a tool (the mock model always returns text, no tool calls), so
-// EmployeeService/DepartmentService only need to satisfy the constructor's type — they're passed
-// through unused to buildEmployeeAgentTools(). Real tool behavior is covered by
+// EmployeeService/DepartmentService/LeaveService only need to satisfy the constructor's type —
+// they're passed through unused to buildEmployeeAgentTools(). Real tool behavior is covered by
 // tools/employee-agent.tools.spec.ts (mocked services) and test/agent-tools.e2e-spec.ts (real
 // Mongo-backed services).
 const fakeEmployeeService = {} as EmployeeService;
 const fakeDepartmentService = {} as DepartmentService;
+const fakeLeaveService = {} as LeaveService;
 
 // Substitutes the real Anthropic/OpenAI client construction with the `ai` SDK's own test double
 // (MockLanguageModelV3) so this proves the actual tool-calling loop — versioned prompt loading,
@@ -60,6 +62,7 @@ describe('EmployeeAgentService', () => {
       new EmployeeAgentPromptService(),
       fakeEmployeeService,
       fakeDepartmentService,
+      fakeLeaveService,
     );
 
     const result = await service.chat({
@@ -129,6 +132,7 @@ describe('EmployeeAgentService', () => {
       new EmployeeAgentPromptService(),
       fakeEmployeeService,
       fakeDepartmentService,
+      fakeLeaveService,
     );
 
     const result = await service.chat({
@@ -156,6 +160,7 @@ describe('EmployeeAgentService', () => {
       new EmployeeAgentPromptService(),
       fakeEmployeeService,
       fakeDepartmentService,
+      fakeLeaveService,
     );
 
     await expect(

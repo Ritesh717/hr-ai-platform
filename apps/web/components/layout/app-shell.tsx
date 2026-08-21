@@ -3,6 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { ChatPanel } from "@/components/chat/chat-panel";
+import { ResponseRenderer } from "@/components/chat/response-renderer";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { IconButton } from "@/components/ui/icon-button";
@@ -55,11 +56,6 @@ export function AppShell({
           <DrawerDescription className="sr-only">
             Chat with the HR Copilot about your profile, leave, manager, or payslips.
           </DrawerDescription>
-          {/*
-            Local-only mock state (features/chat/use-copilot-chat.ts) — not wired to the real
-            Employee Agent endpoint yet. That wiring is issue #67; this proves ChatPanel works as
-            the persistent right-side Drawer host per ui-plan.md §4.4.
-          */}
           <ChatPanel
             title="HR Copilot"
             subtitle="Ask about your profile, leave, manager, or payslips"
@@ -67,6 +63,7 @@ export function AppShell({
             isResponding={isResponding}
             onSendMessage={sendMessage}
             onStopResponse={stopResponse}
+            renderMessageContent={(msg) => <ResponseRenderer message={msg} />}
           />
         </DrawerContent>
       </Drawer>

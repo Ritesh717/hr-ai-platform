@@ -1,6 +1,9 @@
 import { AuthorizationError, NotFoundError } from '../src/common/errors/app.error';
 import { DepartmentService } from '../src/modules/department/department.service';
 import { EmployeeService } from '../src/modules/employee/employee.service';
+import { LeaveService } from '../src/modules/leave/leave.service';
+import { LeaveRequestCreateDto } from '../src/modules/leave/dto/leave-request-create.dto';
+import { LeaveType } from '../src/modules/leave/schemas/leave-request.schema';
 import { PermissionCode } from '../src/modules/rbac/constants/permission-code.enum';
 import { buildToolSet } from '../src/modules/agent/tools/agent-tool';
 import { AgentToolContext } from '../src/modules/agent/tools/agent-tool-context';
@@ -16,17 +19,16 @@ import {
   TestContext,
 } from './fixtures';
 
-// Story #2 (Stage 2 — Employee & org read tools). Unlike tools/employee-agent.tools.spec.ts
-// (mocked EmployeeService/DepartmentService), this drives the real, Mongo-backed services the
-// running app wires up (same DI graph AgentModule uses) — proving the tools genuinely go through
-// EmployeeService/DepartmentService end to end (CLAUDE.md rule 1) and that "unauthorized
-// cross-employee lookups are rejected with the same AuthorizationError a REST call would produce"
-// (the story's own acceptance criterion) against real data, not a stand-in.
+// Stories #2 and #3 (Stage 2 — Employee/org + leave/payroll read tools). Unlike
+// tools/employee-agent.tools.spec.ts (mocked services), this drives the real, Mongo-backed
+// services the running app wires up — proving the tools go through domain services end to end
+// (CLAUDE.md rule 1) and that unauthorized lookups are rejected with the same AuthorizationError
+// a REST call would produce, against real data.
 function toolContext(overrides: Partial<AgentToolContext>): AgentToolContext {
   return { tenantId: '', actorId: '', actorPermissions: new Set(), ...overrides };
 }
 
-describe('Employee Agent read tools (real EmployeeService/DepartmentService)', () => {
+describe('Employee Agent read tools (real domain services)', () => {
   let ctx: TestContext;
 
   beforeAll(async () => {
@@ -44,7 +46,8 @@ describe('Employee Agent read tools (real EmployeeService/DepartmentService)', (
   function tools() {
     const employeeService = ctx.app.get(EmployeeService);
     const departmentService = ctx.app.get(DepartmentService);
-    return buildEmployeeAgentTools({ employeeService, departmentService });
+    const leaveService = ctx.app.get(LeaveService);
+    return buildEmployeeAgentTools({ employeeService, departmentService, leaveService });
   }
 
   describe('get_employee_profile', () => {
@@ -220,6 +223,117 @@ describe('Employee Agent read tools (real EmployeeService/DepartmentService)', (
         // @ts-expect-error — see above
         toolSet.get_department.execute!({ name: 'Nonexistent' }, {}),
       ).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  // Story #3 (Stage 2 — leave & payroll read tools).
+  describe('get_leave_balance', () => {
+    it("returns the caller's own balance with no permissions needed (self-access)", async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const employee = await employeeUser(ctx, tenant, roles);
+      const leaveService = ctx.app.get(LeaveService);
+
+      // Seed an approved leave request so usedDays > 0
+      await leaveService.createRequest(
+        { type: LeaveType.VACATION, startDate: '2025-07-01', endDate: '2025-07-05' } as LeaveRequestCreateDto,
+        { tenantId: tenant._id.toString(), actorId: employee._id.toString() },
+      );
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: employee._id.toString() }),
+      );
+
+      // @ts-expect-error — ai SDK tool execute signature
+      const result = await toolSet.get_leave_balance.execute!({ year: 2025 }, {});
+
+      expect(result).toMatchObject({
+        employeeId: employee._id.toString(),
+        year: 2025,
+        allocatedDays: 20,
+      });
+      // The request is still pending (not approved), so usedDays should be 0
+      expect(result.usedDays).toBe(0);
+      expect(result.remainingDays).toBe(20);
+    });
+
+    it('rejects a cross-employee balance query when the caller lacks LEAVE_READ', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const employee = await employeeUser(ctx, tenant, roles, { email: 'e1@example.com' });
+      const other = await employeeUser(ctx, tenant, roles, { email: 'e2@example.com' });
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: employee._id.toString() }),
+      );
+
+      await expect(
+        // @ts-expect-error — see above
+        toolSet.get_leave_balance.execute!({ employeeId: other._id.toString() }, {}),
+      ).rejects.toThrow(AuthorizationError);
+    });
+  });
+
+  describe('get_pending_requests', () => {
+    it("returns only the caller's pending requests (not approved/rejected)", async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const employee = await employeeUser(ctx, tenant, roles);
+      const leaveService = ctx.app.get(LeaveService);
+
+      await leaveService.createRequest(
+        { type: LeaveType.VACATION, startDate: '2025-07-01', endDate: '2025-07-03' } as LeaveRequestCreateDto,
+        { tenantId: tenant._id.toString(), actorId: employee._id.toString() },
+      );
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: employee._id.toString() }),
+      );
+
+      // @ts-expect-error — see above
+      const result = await toolSet.get_pending_requests.execute!({}, {});
+
+      expect(result.total).toBe(1);
+      expect(result.requests[0].status).toBe('pending');
+    });
+
+    it('returns an empty list when the caller has no pending requests', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const employee = await employeeUser(ctx, tenant, roles);
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: employee._id.toString() }),
+      );
+
+      // @ts-expect-error — see above
+      const result = await toolSet.get_pending_requests.execute!({}, {});
+
+      expect(result.total).toBe(0);
+      expect(result.requests).toHaveLength(0);
+    });
+  });
+
+  describe('get_payslip', () => {
+    it('returns unavailable status with no sensitive payroll data (payroll module not yet built)', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const employee = await employeeUser(ctx, tenant, roles);
+
+      const toolSet = buildToolSet(
+        tools(),
+        toolContext({ tenantId: tenant._id.toString(), actorId: employee._id.toString() }),
+      );
+
+      // @ts-expect-error — see above
+      const result = await toolSet.get_payslip.execute!({ month: 6, year: 2025 }, {});
+
+      expect(result.status).toBe('unavailable');
+      expect(result.employeeId).toBe(employee._id.toString());
+      expect(result.period).toEqual({ month: 6, year: 2025 });
+      // Verify no raw salary data leaks through (blueprint §28)
+      expect(result).not.toHaveProperty('grossPay');
+      expect(result).not.toHaveProperty('netPay');
+      expect(result).not.toHaveProperty('deductions');
     });
   });
 });
