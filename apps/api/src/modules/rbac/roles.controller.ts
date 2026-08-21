@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentEmployee } from '../../common/auth/current-employee.decorator';
 import { CurrentEmployee as CurrentEmployeeType } from '../../common/auth/current-employee';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
@@ -7,9 +8,10 @@ import { RoleListResponseDto, RoleResponseDto } from './dto/role-response.dto';
 import { RoleUpdateDto } from './dto/role-update.dto';
 import { RoleService } from './role.service';
 
-// Mirrors apps/api/routers/roles.py's roles_router (prefix /api/v1/roles). Thin: extracts
-// CurrentEmployee and delegates straight to RoleService — permission checks happen there.
-@Controller('api/v1/roles')
+// Thin: delegates straight to RoleService — permission checks happen there.
+@ApiTags('roles')
+@ApiBearerAuth()
+@Controller('roles')
 @UseGuards(JwtAuthGuard)
 export class RolesController {
   constructor(private readonly roleService: RoleService) {}
@@ -62,8 +64,9 @@ export class RolesController {
   }
 }
 
-// Mirrors apps/api/routers/roles.py's permissions_router (prefix /api/v1/permissions).
-@Controller('api/v1/permissions')
+@ApiTags('permissions')
+@ApiBearerAuth()
+@Controller('permissions')
 @UseGuards(JwtAuthGuard)
 export class PermissionsController {
   constructor(private readonly roleService: RoleService) {}

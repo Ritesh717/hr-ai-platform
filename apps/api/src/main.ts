@@ -2,15 +2,17 @@ import { initTracing } from './tracing';
 // Must be called before any other import that instruments frameworks (HTTP, Mongoose).
 initTracing();
 
+import compression from 'compression';
+import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AppConfig } from './config/configuration';
 import { HttpExceptionFilter } from './common/errors/http-exception.filter';
 
-// Mirrors apps/api/main.py's create_app() + lifespan.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = app.get(Logger);
@@ -18,16 +20,51 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService<AppConfig, true>);
 
+  // Security headers — applied before any request reaches route handlers.
+  app.use(helmet());
+
+  // Gzip response compression — reduces payload size for large collections.
+  app.use(compression());
+
   app.enableCors({
     origin: configService.get('corsAllowOrigins', { infer: true }),
     credentials: true,
   });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  // All API routes live under /api/v1. Health endpoints are excluded so probes work without
+  // the prefix (docker-compose healthcheck, Kubernetes liveness/readiness probes).
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health', 'live', 'ready'],
+  });
+
+  // Body size limit: 1 MB. Guards the agent chat endpoint against extremely large payloads
+  // that would trigger expensive LLM calls before DTO validation fires.
+  app.use(require('express').json({ limit: '1mb' }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // OpenAPI / Swagger — available at /api/v1/docs in non-production environments.
+  if (configService.get('environment', { infer: true }) !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('HR AI Platform API')
+      .setDescription('Multi-tenant HR platform with AI agent capabilities')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/v1/docs', app, document);
+  }
 
   const port = configService.get('port', { infer: true });
   await app.listen(port);
-  logger.log(`Starting hr-ai-platform API (node port) on :${port}`, 'Bootstrap');
+  logger.log(`HR AI Platform API listening on :${port}`, 'Bootstrap');
 }
 
 bootstrap();

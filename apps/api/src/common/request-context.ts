@@ -4,8 +4,8 @@ export interface RequestContextStore {
   requestId: string;
 }
 
-// Mirrors shared/logging/setup.py's `request_id_ctx` ContextVar: one storage cell threaded
-// through a request's lifetime, read by both the JSON log formatter and the error envelope.
+// One storage cell per async context, threaded through a request's lifetime.
+// Read by the JSON log formatter and the error response envelope.
 export const requestContext = new AsyncLocalStorage<RequestContextStore>();
 
 export function getRequestId(): string | null {
