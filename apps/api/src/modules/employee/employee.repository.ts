@@ -10,7 +10,6 @@ export interface EmployeeWithPopulatedRole extends Omit<EmployeeDocument, 'roleI
   roleId: RoleDocument;
 }
 
-// Mirrors domain/employee/repository.py's EmployeeRepository.
 @Injectable()
 export class EmployeeRepository {
   constructor(@InjectModel(Employee.name) private readonly model: Model<EmployeeDocument>) {}
@@ -64,6 +63,12 @@ export class EmployeeRepository {
 
   async delete(employee: EmployeeDocument, session?: ClientSession): Promise<void> {
     await employee.deleteOne({ session });
+  }
+
+  // Returns all direct reports (employees whose managerId matches the given manager).
+  // Used by LeaveService.getTeamLeave() without crossing into the Employee module's internals.
+  findByManagerId(managerId: string | Types.ObjectId, tenantId: string | Types.ObjectId): Promise<EmployeeDocument[]> {
+    return this.model.find({ managerId, tenantId }).select('_id fullName').exec();
   }
 
   countByRoleId(roleId: string | Types.ObjectId, tenantId: string | Types.ObjectId): Promise<number> {

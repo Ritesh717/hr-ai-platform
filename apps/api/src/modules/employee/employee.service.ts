@@ -13,7 +13,6 @@ import { EmployeeUpdateDto, PRIVILEGED_UPDATE_FIELDS } from './dto/employee-upda
 import { EmployeeRepository } from './employee.repository';
 import { Employee, EmployeeDocument, EmployeeStatus } from './schemas/employee.schema';
 
-// Mirrors domain/employee/service.py's EmployeeService.
 @Injectable()
 export class EmployeeService {
   constructor(

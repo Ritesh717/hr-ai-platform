@@ -1,6 +1,5 @@
-// Mirrors domain/rbac/constants.py's PermissionCode StrEnum — the fixed, code-defined
-// vocabulary tenants pick subsets of when building roles. Never invent new codes at runtime;
-// add a member here (and to the seed template below, if relevant) instead.
+// Fixed, code-defined vocabulary of permission codes. Tenants pick subsets when building roles.
+// Never invent new codes at runtime — add a member here (and to the seed template, if relevant).
 export enum PermissionCode {
   EMPLOYEE_READ = 'employee.read',
   EMPLOYEE_WRITE = 'employee.write',
@@ -21,7 +20,7 @@ export function isPermissionCode(value: string): value is PermissionCode {
 }
 
 // RoleName labels the 3 seed-time starter roles only — plays no role in runtime authorization,
-// purely a bootstrap-time convenience (mirrors domain/rbac/constants.py's RoleName).
+// purely a bootstrap-time convenience.
 export enum RoleName {
   EMPLOYEE = 'employee',
   MANAGER = 'manager',

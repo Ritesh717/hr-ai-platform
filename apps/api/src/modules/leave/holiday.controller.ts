@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentEmployee } from '../../common/auth/current-employee.decorator';
 import { CurrentEmployee as CurrentEmployeeType } from '../../common/auth/current-employee';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
@@ -6,7 +7,9 @@ import { HolidayCreateDto } from './dto/holiday-create.dto';
 import { HolidayResponseDto } from './dto/holiday-response.dto';
 import { LeaveService } from './leave.service';
 
-@Controller('api/v1/leave/holidays')
+@ApiTags('leave')
+@ApiBearerAuth()
+@Controller('leave/holidays')
 @UseGuards(JwtAuthGuard)
 export class HolidayController {
   constructor(private readonly leaveService: LeaveService) {}
