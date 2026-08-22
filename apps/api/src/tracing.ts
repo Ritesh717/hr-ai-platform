@@ -21,9 +21,6 @@ export function initTracing(): void {
 
   sdk = new NodeSDK({
     serviceName: 'hr-ai-platform-api',
-    // When OTLP_ENDPOINT is set the SDK picks up the OtlpTraceExporter via the env-var-driven
-    // auto-configuration from @opentelemetry/auto-instrumentations-node. When it isn't set we
-    // fall back to ConsoleSpanExporter so local spans are visible without extra infra.
     ...(otlpEndpoint ? {} : { traceExporter: new ConsoleSpanExporter() }),
   });
   sdk.start();
