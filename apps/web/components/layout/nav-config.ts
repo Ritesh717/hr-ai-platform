@@ -7,6 +7,7 @@ import {
   Clock,
   CreditCard,
   LayoutDashboard,
+  Network,
   ScrollText,
   ShieldCheck,
   Sparkles,
@@ -51,6 +52,7 @@ export const navConfig: NavLens[] = [
     requiresAny: ["leave.approve"],
     items: [
       { href: "/my-team", label: "My Team", icon: Users2 },
+      { href: "/org", label: "Org Chart", icon: Network },
       { href: "/departments", label: "Organization", icon: Building2 },
       { href: "/approvals", label: "Approvals", icon: CheckCircle2 },
     ],
