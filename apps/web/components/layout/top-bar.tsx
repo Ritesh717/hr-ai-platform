@@ -33,8 +33,8 @@ export function TopBar({
   const router = useRouter();
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-glass-border bg-glass-surface-subtle px-6 backdrop-blur-glass-sm backdrop-saturate-150">
-      <div className="text-sm text-text-muted">{breadcrumb}</div>
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-glass-border bg-glass-surface-subtle px-4 backdrop-blur-glass-sm backdrop-saturate-150 sm:px-6">
+      <div className="hidden text-sm text-text-muted sm:block">{breadcrumb}</div>
 
       <div className="flex items-center gap-2">
         <IconButton label="Toggle theme" intent="ghost" onClick={toggleTheme}>
@@ -63,7 +63,7 @@ export function TopBar({
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <Avatar name={user.name} src={user.avatarUrl} size="sm" />
-            <span className="text-sm font-medium text-text">{user.name}</span>
+            <span className="hidden text-sm font-medium text-text sm:inline">{user.name}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{user.role}</DropdownMenuLabel>

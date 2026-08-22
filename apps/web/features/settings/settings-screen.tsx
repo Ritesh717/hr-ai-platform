@@ -53,7 +53,7 @@ function fmtRelative(iso: string) {
 
 function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-4 border-b border-border last:border-0">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 border-b border-border last:border-0">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-text">{label}</p>
         {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
@@ -76,7 +76,7 @@ function AppearanceTab({ prefs, onChange }: { prefs: UserPreferences; onChange: 
               onChange({ theme: v as UserPreferences["theme"] });
               applyTheme(v as UserPreferences["theme"]);
             }}
-            className="flex gap-3"
+            className="flex flex-wrap gap-3"
           >
             {(["light", "dark", "system"] as const).map((t) => (
               <label key={t} className="flex cursor-pointer items-center gap-1.5 text-sm text-text capitalize">
@@ -91,7 +91,7 @@ function AppearanceTab({ prefs, onChange }: { prefs: UserPreferences; onChange: 
           <RadioGroup
             value={prefs.density}
             onValueChange={(v) => onChange({ density: v as UserPreferences["density"] })}
-            className="flex gap-3"
+            className="flex flex-wrap gap-3"
           >
             {(["comfortable", "compact"] as const).map((d) => (
               <label key={d} className="flex cursor-pointer items-center gap-1.5 text-sm text-text capitalize">
@@ -128,7 +128,7 @@ function AIBehaviorTab({ prefs, onChange }: { prefs: UserPreferences; onChange: 
           <RadioGroup
             value={prefs.aiVerbosity}
             onValueChange={(v) => onChange({ aiVerbosity: v as UserPreferences["aiVerbosity"] })}
-            className="flex gap-3"
+            className="flex flex-wrap gap-3"
           >
             {(["concise", "balanced", "detailed"] as const).map((v) => (
               <label key={v} className="flex cursor-pointer items-center gap-1.5 text-sm text-text capitalize">
@@ -319,7 +319,7 @@ function AccessibilityTab({ prefs, onChange }: { prefs: UserPreferences; onChang
               onChange({ fontSize: v as UserPreferences["fontSize"] });
               applyFontSize(v as UserPreferences["fontSize"]);
             }}
-            className="flex gap-3"
+            className="flex flex-wrap gap-3"
           >
             {([["default", "Default"], ["large", "Large"], ["x-large", "X-Large"]] as const).map(([val, label]) => (
               <label key={val} className="flex cursor-pointer items-center gap-1.5 text-sm text-text">

@@ -177,7 +177,7 @@ export function PayrollScreen() {
                       {formatShortDate(ps.periodStart)} – {formatShortDate(ps.periodEnd)}
                     </p>
                   </Link>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     <p className="tabular-nums text-sm font-semibold text-text">
                       {formatCurrency(ps.grossAmount, ps.currency)}
                     </p>

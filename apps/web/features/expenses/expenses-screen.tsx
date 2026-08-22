@@ -164,7 +164,7 @@ function ReceiptUploadStep({ onConfirm, onCancel }: ReceiptUploadProps) {
               OCR complete — {Math.round(ocr.confidence * 100)}% confidence
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="flex flex-col gap-1">
               <Label className="text-xs">Vendor</Label>
               <Input defaultValue={ocr.vendor} />
