@@ -21,6 +21,7 @@ import {
   User,
   Users,
   Users2,
+  Video,
 } from "lucide-react";
 import type { PermissionCode } from "@/lib/api/types";
 
@@ -54,8 +55,9 @@ export const navConfig: NavLens[] = [
       { href: "/expenses",   label: "Expenses",         icon: Receipt },
       { href: "/careers",    label: "Career Growth",    icon: TrendingUp },
       { href: "/jobs",         label: "Jobs Board",       icon: Briefcase },
-      { href: "/applications", label: "Applications",     icon: FileText },
-      { href: "/chat",         label: "AI Assistant",     icon: Sparkles },
+      { href: "/applications", label: "Applications",  icon: FileText },
+      { href: "/interviews",   label: "Interviews",     icon: Video },
+      { href: "/chat",         label: "AI Assistant",   icon: Sparkles },
     ],
   },
   {
