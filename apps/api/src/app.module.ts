@@ -1,8 +1,10 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { buildConfig } from './config/configuration';
 import { validateEnv } from './config/env.validation';
+import { AppConfig } from './config/configuration';
 import { LoggerModule } from './common/logging/logger.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { AgentModule } from './modules/agent/agent.module';
@@ -20,6 +22,15 @@ import { TenantModule } from './modules/tenant/tenant.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [() => buildConfig(validateEnv(process.env))],
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<AppConfig, true>) => [
+        {
+          ttl: configService.get('throttleTtl', { infer: true }),
+          limit: configService.get('throttleLimit', { infer: true }),
+        },
+      ],
     }),
     LoggerModule,
     MongooseModule.forRootAsync({

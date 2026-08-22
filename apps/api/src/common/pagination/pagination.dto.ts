@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
-// Mirrors apps/api/dependencies/pagination.py's PaginationParams.
+// Standard offset/limit pagination query parameters, validated and transformed by ValidationPipe.
 export class PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)

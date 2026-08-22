@@ -5,8 +5,7 @@ import { EmployeeService } from '../employee/employee.service';
 import { TenantRepository } from '../tenant/tenant.repository';
 import { TokenResponseDto } from './dto/token-response.dto';
 
-// Mirrors apps/api/routers/auth.py's /login flow + shared/auth/security.py's
-// create_access_token.
+// Handles login (credential verification + JWT issuance).
 @Injectable()
 export class AuthService {
   constructor(

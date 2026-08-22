@@ -12,7 +12,7 @@ export interface TextBlockProps {
 // contains raw HTML tags they are rendered as escaped text, not injected into the DOM.
 export function TextBlock({ content, className }: TextBlockProps) {
   return (
-    <ReactMarkdown
+    <div
       className={cn(
         "prose prose-sm max-w-none text-text",
         "prose-headings:text-text prose-strong:text-text prose-code:text-text",
@@ -21,11 +21,10 @@ export function TextBlock({ content, className }: TextBlockProps) {
         "prose-pre:bg-glass-surface prose-pre:border prose-pre:border-glass-border",
         className,
       )}
-      // disallowedElements / skipHtml: react-markdown doesn't render <script> or inline HTML by
-      // default (no rehype-raw), but we make it explicit for clarity.
-      skipHtml
     >
-      {content}
-    </ReactMarkdown>
+      {/* disallowedElements / skipHtml: react-markdown doesn't render <script> or inline HTML by
+          default (no rehype-raw), but we make it explicit for clarity. */}
+      <ReactMarkdown skipHtml>{content}</ReactMarkdown>
+    </div>
   );
 }

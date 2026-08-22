@@ -5,9 +5,8 @@ import { requestContext } from '../request-context';
 
 const HEADER = 'x-request-id';
 
-// Mirrors apps/api/middleware/request_id.py: reads X-Request-ID or generates one, threads it
-// through the request via AsyncLocalStorage (the ContextVar analogue), echoes it back on the
-// response so client and server logs can be correlated.
+// Reads X-Request-ID or generates one, threads it through the request via AsyncLocalStorage,
+// and echoes it back on the response so client and server logs can be correlated.
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {

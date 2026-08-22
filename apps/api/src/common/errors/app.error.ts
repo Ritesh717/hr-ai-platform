@@ -1,6 +1,5 @@
-// Mirrors shared/errors/exceptions.py: a base AppError plus one subclass per HTTP failure mode
-// domain services raise. Controllers never construct error responses directly — they let these
-// propagate to HttpExceptionFilter.
+// Base error hierarchy. Domain services raise these; controllers never construct error responses
+// directly — they propagate to HttpExceptionFilter which maps each subclass to its HTTP status.
 export class AppError extends Error {
   readonly statusCode: number = 500;
   readonly errorCode: string = 'internal_error';

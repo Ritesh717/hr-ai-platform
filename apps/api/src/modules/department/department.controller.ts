@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentEmployee } from '../../common/auth/current-employee.decorator';
 import { CurrentEmployee as CurrentEmployeeType } from '../../common/auth/current-employee';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
@@ -8,8 +9,9 @@ import { DepartmentResponseDto } from './dto/department-response.dto';
 import { DepartmentUpdateDto } from './dto/department-update.dto';
 import { DepartmentService } from './department.service';
 
-// Mirrors apps/api/routers/departments.py (prefix /api/v1/departments).
-@Controller('api/v1/departments')
+@ApiTags('departments')
+@ApiBearerAuth()
+@Controller('departments')
 @UseGuards(JwtAuthGuard)
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}

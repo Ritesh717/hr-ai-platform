@@ -15,6 +15,9 @@ export interface AppConfig {
   anthropicApiKey: string | undefined;
   openaiApiKey: string | undefined;
   deepseekApiKey: string | undefined;
+  throttleTtl: number;
+  throttleLimit: number;
+  otlpEndpoint: string | undefined;
 }
 
 export function buildConfig(env: EnvConfig): AppConfig {
@@ -33,5 +36,8 @@ export function buildConfig(env: EnvConfig): AppConfig {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     openaiApiKey: env.OPENAI_API_KEY,
     deepseekApiKey: env.DEEPSEEK_API_KEY,
+    throttleTtl: env.THROTTLE_TTL,
+    throttleLimit: env.THROTTLE_LIMIT,
+    otlpEndpoint: env.OTLP_ENDPOINT,
   };
 }
