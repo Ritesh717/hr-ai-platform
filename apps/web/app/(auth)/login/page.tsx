@@ -1,10 +1,10 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
@@ -17,18 +17,34 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   return (
-    <div className="glass-backdrop flex min-h-dvh w-full items-center justify-center p-4">
-      <Card className="w-full max-w-sm p-8">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Sparkles className="size-5" />
+    <div className="bg-page flex min-h-dvh w-full items-center justify-center p-4">
+      {/* Glass card */}
+      <div className="w-full max-w-[420px] rounded-[var(--radius-xl)] border border-glass-border bg-glass-surface p-8 shadow-glass-md backdrop-blur-glass backdrop-saturate-150">
+
+        {/* Wordmark */}
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glass-sm">
+            <Sparkles className="size-5.5" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-text">Welcome back</h1>
-            <p className="mt-1 text-sm text-text-muted">Sign in to HR Copilot</p>
+            <h1 className="text-xl font-semibold tracking-tight text-text">HR Copilot</h1>
+            <p className="mt-1 text-sm text-text-muted">Sign in to your workspace</p>
           </div>
         </div>
 
+        {/* SSO — primary action */}
+        <Button type="button" intent="primary" className="w-full" disabled>
+          Continue with SSO
+        </Button>
+
+        {/* Divider */}
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-text-subtle">or sign in with email</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        {/* Email + password form */}
         <form
           className="flex flex-col gap-4"
           onSubmit={async (event) => {
@@ -62,15 +78,20 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" placeholder="••••••••" required />
+            <div className="flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-xs text-text-muted hover:text-text transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
-          <Button type="submit" loading={submitting} className="mt-2 w-full">
+          <Button type="submit" loading={submitting} className="mt-1 w-full">
             Sign in
           </Button>
-          <Button type="button" intent="secondary" className="w-full" disabled>
-            Continue with SSO
-          </Button>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }
