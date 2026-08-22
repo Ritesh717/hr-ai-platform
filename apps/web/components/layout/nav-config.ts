@@ -40,7 +40,7 @@ export const navConfig: NavLens[] = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/profile", label: "My Profile", icon: User },
       { href: "/time", label: "Time & Attendance", icon: Clock },
-      { href: "/time-off", label: "Leave", icon: CalendarClock },
+      { href: "/leave", label: "Leave", icon: CalendarClock },
       { href: "/payslips", label: "Payslips", icon: CreditCard },
       { href: "/chat", label: "AI Assistant", icon: Sparkles },
     ],
