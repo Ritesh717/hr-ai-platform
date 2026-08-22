@@ -30,6 +30,8 @@ export async function createTestApp(): Promise<TestContext> {
   process.env.JWT_SECRET = 'test-secret';
 
   const app = await NestFactory.create(AppModule, { logger: false });
+  // Mirror main.ts setup so test routing matches production.
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'live', 'ready'] });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.init();
