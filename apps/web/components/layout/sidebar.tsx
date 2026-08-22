@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronsLeft, ChevronsRight, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { IconButton } from "@/components/ui/icon-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,8 +11,13 @@ import { NavSection } from "@/components/layout/nav-section";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 
 export function Sidebar() {
+  // Desktop (≥1280px) starts expanded; tablet (768–1279px) starts as icon-rail.
   const [collapsed, setCollapsed] = useState(false);
   const { data: currentUser } = useCurrentUser();
+
+  useEffect(() => {
+    if (window.innerWidth < 1280) setCollapsed(true);
+  }, []);
 
   const visibleLenses = navConfig
     .map((lens) => ({
@@ -29,6 +34,7 @@ export function Sidebar() {
 
   return (
     <TooltipProvider delayDuration={100}>
+      {/* hidden below 768px; at 768–1279px auto-collapses to icon-rail via useEffect */}
       <aside
         className={cn(
           "hidden shrink-0 flex-col gap-6 border-r border-glass-border bg-glass-surface-subtle p-4 backdrop-blur-glass-sm backdrop-saturate-150 transition-all duration-200 md:flex",
@@ -62,7 +68,7 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Collapse toggle */}
+        {/* Collapse toggle — lets user expand/collapse at any desktop/tablet width */}
         <IconButton
           label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           intent="secondary"
