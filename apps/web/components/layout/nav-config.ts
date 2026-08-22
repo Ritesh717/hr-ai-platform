@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  ClipboardList,
   CreditCard,
   Gauge,
   LayoutDashboard,
@@ -60,6 +61,7 @@ export const navConfig: NavLens[] = [
       { href: "/org",         label: "Org Chart",       icon: Network },
       { href: "/departments", label: "Organization",    icon: Building2 },
       { href: "/approvals",   label: "Approvals",       icon: CheckCircle2 },
+      { href: "/onboarding",  label: "Onboarding",      icon: ClipboardList },
     ],
   },
   {
