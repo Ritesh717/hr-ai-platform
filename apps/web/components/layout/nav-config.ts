@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart2,
   BookUser,
+  Briefcase,
   Building2,
   CalendarClock,
   CheckCircle2,
@@ -51,6 +52,7 @@ export const navConfig: NavLens[] = [
       { href: "/payroll",    label: "Payroll",          icon: CreditCard },
       { href: "/expenses",   label: "Expenses",         icon: Receipt },
       { href: "/careers",    label: "Career Growth",    icon: TrendingUp },
+      { href: "/jobs",       label: "Jobs Board",       icon: Briefcase },
       { href: "/chat",       label: "AI Assistant",     icon: Sparkles },
     ],
   },
