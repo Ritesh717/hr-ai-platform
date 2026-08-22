@@ -38,6 +38,11 @@ export function AppShell({
 
   return (
     <div className="bg-page flex h-dvh w-full overflow-hidden">
+      {/* Skip to main content — visible on focus for keyboard/screen-reader users */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Sidebar: hidden below 768px, icon-rail at 768–1279px, full at 1280px+ */}
       <Sidebar />
 
@@ -50,7 +55,7 @@ export function AppShell({
           notificationCount={unreadCount}
         />
         {/* Extra bottom padding on mobile so content clears the tab bar */}
-        <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">{children}</main>
       </div>
 
       {/* Mobile bottom tab bar — hidden at 768px+ */}

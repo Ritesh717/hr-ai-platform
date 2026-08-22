@@ -39,6 +39,16 @@ function applyFontSize(size: UserPreferences["fontSize"]) {
   document.documentElement.style.setProperty("--font-size-base", map[size]);
 }
 
+function applyReducedMotion(value: boolean) {
+  if (typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-reduce-motion", String(value));
+}
+
+function applyEnhancedFocus(value: boolean) {
+  if (typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-enhanced-focus", String(value));
+}
+
 function fmtRelative(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.floor(diffMs / 60_000);
@@ -307,7 +317,7 @@ function AccessibilityTab({ prefs, onChange }: { prefs: UserPreferences; onChang
         >
           <Switch
             checked={prefs.reducedMotion}
-            onCheckedChange={(v) => onChange({ reducedMotion: v })}
+            onCheckedChange={(v) => { onChange({ reducedMotion: v }); applyReducedMotion(v); }}
             aria-label="Enable reduced motion"
           />
         </SettingRow>
@@ -336,7 +346,7 @@ function AccessibilityTab({ prefs, onChange }: { prefs: UserPreferences; onChang
         >
           <Switch
             checked={prefs.enhancedFocus}
-            onCheckedChange={(v) => onChange({ enhancedFocus: v })}
+            onCheckedChange={(v) => { onChange({ enhancedFocus: v }); applyEnhancedFocus(v); }}
             aria-label="Enhanced focus indicators"
           />
         </SettingRow>
@@ -353,6 +363,8 @@ export function SettingsScreen() {
   useEffect(() => {
     applyTheme(prefs.theme);
     applyFontSize(prefs.fontSize);
+    applyReducedMotion(prefs.reducedMotion);
+    applyEnhancedFocus(prefs.enhancedFocus);
   }, []);
 
   function handleChange(partial: Partial<UserPreferences>) {
