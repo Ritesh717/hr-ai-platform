@@ -230,7 +230,7 @@ idle waiting on the backend.
 | UI Stage | Delivers | Backend stage it pairs with | Status |
 |---|---|---|---|
 | F1 | Tokens, theme provider, all §4.1/4.3 primitives, `AppShell`, Login, Dashboard shell (mock data), Employees Directory + Detail | Stage 1 | 🟡 built, pending visual QA |
-| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 | 🟡 chat shell done (story #65), `ResponseRenderer` + real backend wiring open (#66, #67) |
+| F2 | `ChatPanel`/`ResponseRenderer` foundation, global drawer wired to the Employee Agent | Stage 2 | 🟡 built (#65 ChatPanel, #66 ResponseRenderer, #67 live wiring done); manual browser pass with real LLM API key pending (#68) |
 | F3 | Policy Library / "Ask HR" page | Stage 3 | not started |
 | F4 | My Leave apply/history, Approvals Center, `ApprovalRequestCard` | Stage 4 | not started |
 | F5 | Expense submit/list/approve incl. file upload + OCR confirm step | Stage 5 | not started |
