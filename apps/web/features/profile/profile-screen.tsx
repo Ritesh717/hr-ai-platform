@@ -26,7 +26,6 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -321,9 +320,7 @@ export function ProfileScreen({ canEdit = true }: { canEdit?: boolean }) {
       {/* Edit profile dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-          </DialogHeader>
+          <DialogTitle>Edit profile</DialogTitle>
           <form onSubmit={handleSubmit(onEditSubmit)} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="bio">Bio</Label>

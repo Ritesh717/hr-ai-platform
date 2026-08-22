@@ -1,5 +1,5 @@
-import { EmployeesDirectoryScreen } from "@/features/employees/employees-directory-screen";
+import { EmployeesScreen } from "@/features/employees/employees-screen";
 
 export default function EmployeesPage() {
-  return <EmployeesDirectoryScreen />;
+  return <EmployeesScreen />;
 }

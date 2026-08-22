@@ -18,6 +18,7 @@ export function useCurrentUser() {
       return {
         employeeId: employee.id,
         name: employee.fullName,
+        email: employee.email,
         role: employee.role,
         avatarUrl: null as string | null,
         permissions: new Set<PermissionCode>(me.permissions),
