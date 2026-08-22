@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart2,
+  BookUser,
   Building2,
   CalendarClock,
   CheckCircle2,
@@ -38,12 +39,13 @@ export const navConfig: NavLens[] = [
     id: "everyone",
     title: "Menu",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/profile", label: "My Profile", icon: User },
-      { href: "/time", label: "Time & Attendance", icon: Clock },
-      { href: "/leave", label: "Leave", icon: CalendarClock },
-      { href: "/payroll", label: "Payroll", icon: CreditCard },
-      { href: "/chat", label: "AI Assistant", icon: Sparkles },
+      { href: "/dashboard",  label: "Dashboard",        icon: LayoutDashboard },
+      { href: "/profile",    label: "My Profile",       icon: User },
+      { href: "/directory",  label: "People Directory", icon: BookUser },
+      { href: "/time",       label: "Time & Attendance",icon: Clock },
+      { href: "/leave",      label: "Leave",            icon: CalendarClock },
+      { href: "/payroll",    label: "Payroll",          icon: CreditCard },
+      { href: "/chat",       label: "AI Assistant",     icon: Sparkles },
     ],
   },
   {
@@ -51,10 +53,10 @@ export const navConfig: NavLens[] = [
     title: "Manager",
     requiresAny: ["leave.approve"],
     items: [
-      { href: "/my-team", label: "My Team", icon: Users2 },
-      { href: "/org", label: "Org Chart", icon: Network },
-      { href: "/departments", label: "Organization", icon: Building2 },
-      { href: "/approvals", label: "Approvals", icon: CheckCircle2 },
+      { href: "/my-team",     label: "My Team",         icon: Users2 },
+      { href: "/org",         label: "Org Chart",       icon: Network },
+      { href: "/departments", label: "Organization",    icon: Building2 },
+      { href: "/approvals",   label: "Approvals",       icon: CheckCircle2 },
     ],
   },
   {
@@ -62,10 +64,10 @@ export const navConfig: NavLens[] = [
     title: "HR Admin",
     requiresAny: ["employee.write", "rbac.manage"],
     items: [
-      { href: "/employees", label: "Employees", icon: Users },
-      { href: "/analytics", label: "Analytics", icon: BarChart2 },
-      { href: "/roles", label: "Roles & Permissions", icon: ShieldCheck },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
+      { href: "/employees",  label: "Employees",          icon: Users },
+      { href: "/analytics",  label: "Analytics",          icon: BarChart2 },
+      { href: "/roles",      label: "Roles & Permissions",icon: ShieldCheck },
+      { href: "/audit-log",  label: "Audit Log",          icon: ScrollText },
     ],
   },
 ];
