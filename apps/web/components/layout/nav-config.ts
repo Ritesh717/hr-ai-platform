@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  Gauge,
   LayoutDashboard,
   Network,
   ScrollText,
@@ -64,10 +65,11 @@ export const navConfig: NavLens[] = [
     title: "HR Admin",
     requiresAny: ["employee.write", "rbac.manage"],
     items: [
-      { href: "/employees",  label: "Employees",          icon: Users },
-      { href: "/analytics",  label: "Analytics",          icon: BarChart2 },
-      { href: "/roles",      label: "Roles & Permissions",icon: ShieldCheck },
-      { href: "/audit-log",  label: "Audit Log",          icon: ScrollText },
+      { href: "/admin",      label: "Admin Dashboard",     icon: Gauge },
+      { href: "/employees",  label: "Employees",           icon: Users },
+      { href: "/analytics",  label: "Analytics",           icon: BarChart2 },
+      { href: "/roles",      label: "Roles & Permissions", icon: ShieldCheck },
+      { href: "/audit-log",  label: "Audit Log",           icon: ScrollText },
     ],
   },
 ];
