@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { ResponseRenderer } from "@/components/chat/response-renderer";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import {
@@ -28,7 +29,8 @@ export function AppShell({
   const { messages, isResponding, sendMessage, stopResponse } = useCopilotChat();
 
   return (
-    <div className="bg-page flex h-dvh w-full">
+    <div className="bg-page flex h-dvh w-full overflow-hidden">
+      {/* Sidebar: hidden below 768px, icon-rail at 768–1279px, full at 1280px+ */}
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -38,8 +40,12 @@ export function AppShell({
           onSignOut={onSignOut}
           onOpenChat={() => setChatOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        {/* Extra bottom padding on mobile so content clears the tab bar */}
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">{children}</main>
       </div>
+
+      {/* Mobile bottom tab bar — hidden at 768px+ */}
+      <BottomTabBar onOpenChat={() => setChatOpen(true)} />
 
       <Drawer open={chatOpen} onOpenChange={setChatOpen}>
         <DrawerContent className="flex flex-col p-0">
