@@ -4,7 +4,7 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils/cn";
 
-const sizeClasses = { sm: "size-6 text-[10px]", md: "size-9 text-sm", lg: "size-12 text-base" } as const;
+const sizeClasses = { sm: "size-6 text-[10px]", md: "size-9 text-sm", lg: "size-12 text-base", xl: "size-24 text-2xl" } as const;
 
 export const Avatar = forwardRef<
   React.ComponentRef<typeof AvatarPrimitive.Root>,
