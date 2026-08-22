@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { ResponseRenderer } from "@/components/chat/response-renderer";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
@@ -13,6 +14,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useCopilotChat } from "@/features/chat/use-copilot-chat";
+import { fetchNotifications } from "@/lib/api/notifications";
 
 export function AppShell({
   breadcrumb,
@@ -27,6 +29,12 @@ export function AppShell({
 }) {
   const [chatOpen, setChatOpen] = useState(false);
   const { messages, isResponding, sendMessage, stopResponse } = useCopilotChat();
+  const { data: notifs = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
+    staleTime: 60_000,
+  });
+  const unreadCount = notifs.filter((n) => !n.read).length;
 
   return (
     <div className="bg-page flex h-dvh w-full overflow-hidden">
@@ -39,6 +47,7 @@ export function AppShell({
           user={user}
           onSignOut={onSignOut}
           onOpenChat={() => setChatOpen(true)}
+          notificationCount={unreadCount}
         />
         {/* Extra bottom padding on mobile so content clears the tab bar */}
         <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">{children}</main>
