@@ -102,11 +102,14 @@ export function NotificationsScreen() {
       </div>
 
       {/* Category tabs */}
-      <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+      <div role="tablist" aria-label="Notification categories" className="flex gap-1 rounded-lg border border-border bg-surface p-1">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             type="button"
+            role="tab"
+            aria-selected={tab === key}
+            aria-controls="notification-panel"
             onClick={() => setTab(key)}
             className={
               tab === key
@@ -116,7 +119,7 @@ export function NotificationsScreen() {
           >
             {label}
             {tabCounts[key] > 0 && (
-              <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tab === key ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
+              <span aria-label={`${tabCounts[key]} unread`} className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tab === key ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
                 {tabCounts[key]}
               </span>
             )}
