@@ -3,6 +3,7 @@ import { initTracing } from './tracing';
 initTracing();
 
 import compression from 'compression';
+import express from 'express';
 import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -39,7 +40,7 @@ async function bootstrap() {
 
   // Body size limit: 1 MB. Guards the agent chat endpoint against extremely large payloads
   // that would trigger expensive LLM calls before DTO validation fires.
-  app.use(require('express').json({ limit: '1mb' }));
+  app.use(express.json({ limit: '1mb' }));
 
   app.useGlobalPipes(
     new ValidationPipe({
