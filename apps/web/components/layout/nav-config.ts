@@ -1,42 +1,67 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, CalendarClock, LayoutDashboard, ScrollText, ShieldCheck, Users, Users2 } from "lucide-react";
+import {
+  BarChart2,
+  Building2,
+  CalendarClock,
+  CheckCircle2,
+  CreditCard,
+  LayoutDashboard,
+  ScrollText,
+  ShieldCheck,
+  Sparkles,
+  User,
+  Users,
+  Users2,
+} from "lucide-react";
 import type { PermissionCode } from "@/lib/api/types";
 
 export interface NavConfigItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Omit for items every authenticated employee can see (e.g. Dashboard). */
+  /** Omit for items every authenticated employee can see. */
   permission?: PermissionCode;
 }
 
-export interface NavConfigSection {
+export interface NavLens {
+  id: "everyone" | "manager" | "hr-admin";
   title: string;
+  /** Lens section is only shown when the user has at least one of these permissions. */
+  requiresAny?: PermissionCode[];
   items: NavConfigItem[];
 }
 
-/**
- * Extended per UI stage (ui-plan.md §6) as each stage's screens land —
- * add entries here rather than hardcoding links in the Sidebar itself. Sidebar filters items
- * against the current user's live permission set (see lib/auth/use-current-user.ts), not role
- * name — roles are fully dynamic per tenant, so gating must be permission-based.
- */
-export const navConfig: NavConfigSection[] = [
+export const navConfig: NavLens[] = [
   {
-    title: "Main menu",
+    id: "everyone",
+    title: "Menu",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/employees", label: "Employees", icon: Users, permission: "employee.read" },
-      { href: "/departments", label: "Departments", icon: Building2, permission: "department.read" },
-      { href: "/time-off", label: "Time Off", icon: CalendarClock },
-      { href: "/my-team", label: "My Team", icon: Users2 },
+      { href: "/profile", label: "My Profile", icon: User },
+      { href: "/time-off", label: "Leave", icon: CalendarClock },
+      { href: "/payslips", label: "Payslips", icon: CreditCard },
+      { href: "/chat", label: "AI Assistant", icon: Sparkles },
     ],
   },
   {
-    title: "Administration",
+    id: "manager",
+    title: "Manager",
+    requiresAny: ["leave.approve"],
     items: [
-      { href: "/roles", label: "Roles & Permissions", icon: ShieldCheck, permission: "rbac.manage" },
-      { href: "/audit-log", label: "Audit Log", icon: ScrollText, permission: "audit_log.read" },
+      { href: "/my-team", label: "My Team", icon: Users2 },
+      { href: "/departments", label: "Organization", icon: Building2 },
+      { href: "/approvals", label: "Approvals", icon: CheckCircle2 },
+    ],
+  },
+  {
+    id: "hr-admin",
+    title: "HR Admin",
+    requiresAny: ["employee.write", "rbac.manage"],
+    items: [
+      { href: "/employees", label: "Employees", icon: Users },
+      { href: "/analytics", label: "Analytics", icon: BarChart2 },
+      { href: "/roles", label: "Roles & Permissions", icon: ShieldCheck },
+      { href: "/audit-log", label: "Audit Log", icon: ScrollText },
     ],
   },
 ];

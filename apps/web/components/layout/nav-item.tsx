@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function NavItem({
   href,
@@ -21,10 +22,10 @@ export function NavItem({
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
 
-  return (
+  const link = (
     <Link
       href={href}
-      title={collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         collapsed && "justify-center px-0",
@@ -41,5 +42,14 @@ export function NavItem({
         </span>
       ) : null}
     </Link>
+  );
+
+  if (!collapsed) return link;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }
