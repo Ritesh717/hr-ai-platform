@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  Clock,
   CreditCard,
   LayoutDashboard,
   ScrollText,
@@ -38,6 +39,7 @@ export const navConfig: NavLens[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/profile", label: "My Profile", icon: User },
+      { href: "/time", label: "Time & Attendance", icon: Clock },
       { href: "/time-off", label: "Leave", icon: CalendarClock },
       { href: "/payslips", label: "Payslips", icon: CreditCard },
       { href: "/chat", label: "AI Assistant", icon: Sparkles },
