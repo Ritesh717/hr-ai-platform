@@ -14,7 +14,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Matches shared/errors/handlers.py's structured error body. */
 interface ErrorBody {
   error: { code: string; message: string; request_id: string | null };
 }

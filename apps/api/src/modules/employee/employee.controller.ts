@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentEmployee } from '../../common/auth/current-employee.decorator';
 import { CurrentEmployee as CurrentEmployeeType } from '../../common/auth/current-employee';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
@@ -8,10 +9,11 @@ import { EmployeeListResponseDto, EmployeeResponseDto } from './dto/employee-res
 import { EmployeeUpdateDto } from './dto/employee-update.dto';
 import { EmployeeService } from './employee.service';
 
-// Mirrors apps/api/routers/employees.py (prefix /api/v1/employees). Thin: extracts
-// CurrentEmployee and delegates straight to EmployeeService — self-access/self-update carve-outs
-// and permission checks all live there, not here.
-@Controller('api/v1/employees')
+// Thin controller: extracts CurrentEmployee and delegates straight to EmployeeService.
+// Self-access carve-outs and permission checks live in the service, not here.
+@ApiTags('employees')
+@ApiBearerAuth()
+@Controller('employees')
 @UseGuards(JwtAuthGuard)
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}

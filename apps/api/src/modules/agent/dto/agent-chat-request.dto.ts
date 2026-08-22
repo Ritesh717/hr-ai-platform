@@ -1,10 +1,10 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 
-// Mirrors employee-create.dto.ts's pattern: thin, validated at the edge. A single free-text
-// message is the whole request contract for this scaffolding story — multi-turn conversation
-// history is out of scope until a real chat surface lands.
 export class AgentChatRequestDto {
   @IsString()
   @MinLength(1)
+  // 4000 chars is well above any natural employee query; keeps LLM call cost bounded and
+  // guards against prompt-stuffing attacks via the chat endpoint.
+  @MaxLength(4000)
   message: string;
 }

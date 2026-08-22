@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { AuthorizationError, NotFoundError, ValidationAppError } from '../../common/errors/app.error';
-import { Employee, EmployeeDocument } from '../employee/schemas/employee.schema';
+import { EmployeeRepository } from '../employee/employee.repository';
 import { requirePermission } from '../rbac/authorization';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { HolidayCreateDto } from './dto/holiday-create.dto';
@@ -26,7 +25,7 @@ export class LeaveService {
   constructor(
     private readonly leaveRequestRepository: LeaveRequestRepository,
     private readonly holidayRepository: HolidayRepository,
-    @InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>,
+    private readonly employeeRepository: EmployeeRepository,
   ) {}
 
   async listRequests(params: {
@@ -140,10 +139,7 @@ export class LeaveService {
     actorId: string;
     statuses?: LeaveStatus[];
   }): Promise<LeaveTeamEntryDto[]> {
-    const reports = await this.employeeModel
-      .find({ tenantId: params.tenantId, managerId: params.actorId })
-      .select('_id fullName')
-      .exec();
+    const reports = await this.employeeRepository.findByManagerId(params.actorId, params.tenantId);
     if (reports.length === 0) return [];
 
     const nameById = new Map(reports.map((employee) => [employee._id.toString(), employee.fullName]));

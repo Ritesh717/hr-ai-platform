@@ -28,20 +28,26 @@ export const envSchema = z.object({
   JWT_ALGORITHM: z.string().default('HS256'),
   JWT_EXPIRES_MINUTES: z.coerce.number().default(480),
   CORS_ALLOW_ORIGINS: jsonStringArray,
-  // Agent runtime (Stage 2, story #1: see docs/blueprint.md §54 "Agent runtime decision").
-  // Provider/model are env-driven, never hardcoded, so a deployment can switch models without a
+
+  // Agent runtime: provider/model are env-driven so a deployment can switch models without a
   // code change. API keys are optional at the schema level because the app must still boot (and
   // every non-agent route must still work) without them configured; EmployeeAgentService fails
-  // loudly, at call time, if the selected provider's key is missing.
+  // loudly at call time if the selected provider's key is missing.
   AGENT_MODEL_PROVIDER: z.enum(['anthropic', 'openai', 'deepseek']).default('anthropic'),
   AGENT_MODEL_NAME: z.string().default('claude-3-5-haiku-20241022'),
   AGENT_PROMPT_VERSION: z.string().default('v2'),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
-  // Resolved via the official @ai-sdk/deepseek provider package (DeepSeek's chat completions API
-  // is OpenAI-compatible, but @ai-sdk/deepseek already wraps it — no bespoke SDK needed) — see
-  // model/agent-model.provider.ts.
   DEEPSEEK_API_KEY: z.string().optional(),
+
+  // Rate limiting: applied to login (10/min) and agent chat (30/min) endpoints.
+  // THROTTLE_TTL is in milliseconds.
+  THROTTLE_TTL: z.coerce.number().default(60_000),
+  THROTTLE_LIMIT: z.coerce.number().default(200),
+
+  // OpenTelemetry: when OTLP_ENDPOINT is set the tracing exporter switches to OTLP (Jaeger/
+  // Tempo). Omit in local/test environments to fall back to the console exporter.
+  OTLP_ENDPOINT: z.string().url().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
