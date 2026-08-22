@@ -12,6 +12,10 @@ const config: Config = {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
+  moduleNameMapper: {
+    // Explicit mapping so jest.mock() hoisting resolves @/ the same way imports do.
+    "^@/(.*)$": "<rootDir>/$1",
+  },
 };
 
 // Exported this way so next/jest can load the (async) Next.js config first.
