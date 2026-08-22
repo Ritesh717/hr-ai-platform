@@ -1,5 +1,5 @@
-import { RolesScreen } from "@/features/roles/roles-screen";
+import { PermissionsScreen } from "@/features/roles/permissions-screen";
 
 export default function RolesPage() {
-  return <RolesScreen />;
+  return <PermissionsScreen />;
 }
