@@ -2,17 +2,25 @@
 @import "../lib/theme/tokens.css";
 
 @theme inline {
+  /* ── Colors ─────────────────────────────────────────────────────── */
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
+  --color-surface-border: var(--color-surface-border);
   --color-surface-raised: var(--color-surface-raised);
   --color-surface-raised-foreground: var(--color-surface-raised-foreground);
   --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
 
   --color-text: var(--color-text);
   --color-text-muted: var(--color-text-muted);
+  --color-text-subtle: var(--color-text-subtle);
 
   --color-primary: var(--color-primary);
+  --color-primary-alt: var(--color-primary-alt);
   --color-primary-foreground: var(--color-primary-foreground);
+  --color-primary-weak: var(--color-primary-weak);
+
+  --color-chip: var(--color-chip);
 
   --color-success: var(--color-success);
   --color-success-foreground: var(--color-success-foreground);
@@ -23,47 +31,132 @@
   --color-info: var(--color-info);
   --color-info-foreground: var(--color-info-foreground);
 
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
+  --color-overlay-scrim: var(--color-overlay-scrim);
 
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
-
-  --color-glass-surface-subtle: var(--color-glass-surface-subtle);
+  /* Glass tier */
   --color-glass-surface: var(--color-glass-surface);
+  --color-glass-surface-subtle: var(--color-glass-surface-subtle);
   --color-glass-surface-strong: var(--color-glass-surface-strong);
   --color-glass-surface-inverse: var(--color-glass-surface-inverse);
   --color-glass-border: var(--color-glass-border);
   --color-glass-border-strong: var(--color-glass-border-strong);
   --color-glass-highlight: var(--color-glass-highlight);
-  --color-overlay-scrim: var(--color-overlay-scrim);
 
+  /* ── Shadows ─────────────────────────────────────────────────────── */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
   --shadow-glass-sm: var(--shadow-glass-sm);
   --shadow-glass-md: var(--shadow-glass-md);
   --shadow-glass-glow: var(--shadow-glass-glow);
 
+  /* ── Radius ──────────────────────────────────────────────────────── */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
+
+  /* ── Blur ────────────────────────────────────────────────────────── */
   --blur-glass-sm: var(--blur-glass-sm);
   --blur-glass-md: var(--blur-glass-md);
   --blur-glass-lg: var(--blur-glass-lg);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ── Typography ──────────────────────────────────────────────────── */
+  /* SF Pro system stack; Geist (loaded by next/font) is the web-safe fallback */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "SF Pro Display", "SF Pro Text", system-ui, "Helvetica Neue", Inter, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
 }
 
+/* ── Base ──────────────────────────────────────────────────────────────── */
+
 body {
-  background: var(--color-bg);
+  background: var(--color-bg-base);
   color: var(--color-text);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  /* Guard: match bg-base colour so there's no flash if bg-page class is missing */
 }
 
 * {
   border-color: var(--color-border);
 }
 
-.glass-backdrop {
-  background-color: var(--color-bg);
-  background-image: var(--gradient-decorative);
+/* ── Page background — apply to the outermost layout shell ─────────────── */
+/*
+  .bg-page: the PeopleHR signature background — a cool blue-grey gradient base
+  with layered radial gradients that give the glass surfaces something to read
+  against. Apply to the root layout's <div> or <body> directly.
+*/
+.bg-page {
+  background: var(--color-bg-gradient), var(--color-bg-base);
   background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+/* ── Glass backdrop (legacy alias, kept for existing components) ─────────── */
+.glass-backdrop {
+  background: var(--color-bg-gradient), var(--color-bg-base);
+  background-attachment: fixed;
+}
+
+/* ── Backdrop-filter utilities ──────────────────────────────────────────── */
+/*
+  These are not in Tailwind's default set at the exact blur values PeopleHR
+  requires, so we add them here as one-line utilities.
+*/
+.backdrop-blur-glass {
+  backdrop-filter: blur(var(--blur-glass-md)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur-glass-md)) saturate(1.4);
+}
+.backdrop-blur-glass-lg {
+  backdrop-filter: blur(var(--blur-glass-lg)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--blur-glass-lg)) saturate(1.5);
+}
+.backdrop-blur-glass-sm {
+  backdrop-filter: blur(var(--blur-glass-sm)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--blur-glass-sm)) saturate(1.3);
+}
+
+/* ── Typography scale — PeopleHR spec (ui-plan.md §3.3) ─────────────────── */
+/*
+  Use these classes for headings and special numeric displays.
+  Body text and prose use Tailwind's text-sm / text-base utilities directly.
+*/
+.text-display {
+  font-size: 3.5rem;      /* 56px */
+  font-weight: 740;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+.text-page-title {
+  font-size: clamp(2.125rem, 3.5vw, 2.875rem); /* 34–46px */
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+}
+.text-section-heading {
+  font-size: 1.375rem;    /* 22px */
+  font-weight: 620;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+.text-meta {
+  font-size: 0.8125rem;   /* 13px */
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+.text-financial {
+  font-size: clamp(2.125rem, 3vw, 2.5rem); /* 34–40px */
+  font-weight: 740;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }

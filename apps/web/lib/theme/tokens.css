@@ -1,100 +1,204 @@
 /*
   Design tokens — single source of truth (ui-plan.md §3).
-  Components read these via Tailwind utilities (see @theme block in app/globals.css),
-  never a literal hex/px value. Light is the default; [data-theme="dark"] overrides.
+
+  PeopleHR token mapping — each token's PeopleHR counterpart is shown in parentheses.
+  Components read these via Tailwind utilities declared in app/globals.css @theme block.
+  Never use raw hex/rgba values in component files — always reference a token name.
+
+  Surface elevation model (four tiers):
+    Background  →  Glass  →  Elevated  →  Modal
+    --color-bg     --color-glass-surface  --color-surface  --color-surface + overlay scrim
 */
 
+/* ─── Light mode (default) ─────────────────────────────────────────────── */
+
 :root {
-  --color-bg: #f6f4f1;
-  --color-surface: #ffffff;
-  --color-surface-raised: #2b2620;
-  --color-surface-raised-foreground: #f3efe9;
-  --color-border: #e8e3dd;
+  /* Page background — layered radial gradients over a cool blue-grey base
+     (PeopleHR --bg). Applied via the .bg-page utility class. */
+  --color-bg-base: linear-gradient(180deg, #f6f8fd, #eceff6);
+  --color-bg-gradient: radial-gradient(ellipse at 20% -10%, rgba(99,102,241,.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 5%, rgba(34,211,238,.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(16,185,129,.06) 0%, transparent 60%);
 
-  --color-text: #211d18;
-  --color-text-muted: #8a8378;
+  /* Primary accent — graphite near-black (PeopleHR --acc) */
+  --color-primary: #111827;
+  --color-primary-alt: #3f4a5f;           /* PeopleHR --acc2 */
+  --color-primary-foreground: #ffffff;    /* PeopleHR --accInk */
+  --color-primary-weak: rgba(17,24,39,.08); /* PeopleHR --accWeak — AI surfaces, active chips */
 
-  --color-primary: #2563eb;
-  --color-primary-foreground: #ffffff;
+  /* Text scale (PeopleHR --ink / --ink2 / --ink3) */
+  --color-text: #0c1222;
+  --color-text-muted: #5a6474;
+  --color-text-subtle: #98a1b2;
 
-  --color-success: #16a34a;
+  /* Borders (PeopleHR --line / --line2) */
+  --color-border: rgba(12,18,40,.08);
+  --color-border-subtle: rgba(12,18,40,.05);
+
+  /* Glass surface — Tier 2 (PeopleHR --glass / --glassBrd) */
+  --color-glass-surface: rgba(255,255,255,.55);
+  --color-glass-border: rgba(255,255,255,.78);
+
+  /* Elevated surface — Tier 3 (PeopleHR --elev / --elevBrd) */
+  --color-surface: rgba(255,255,255,.86);
+  --color-surface-border: rgba(255,255,255,.90);
+
+  /* Chip / pill background (PeopleHR --chip) */
+  --color-chip: rgba(255,255,255,.60);
+
+  /* Semantic — success / warning / danger (PeopleHR --good / --warn / --bad) */
+  --color-success: #2fb673;
   --color-success-foreground: #ffffff;
-  --color-warning: #d97706;
+  --color-warning: #f5a524;
   --color-warning-foreground: #221a05;
-  --color-danger: #dc2626;
+  --color-danger: #f2545b;
   --color-danger-foreground: #ffffff;
   --color-info: #0891b2;
   --color-info-foreground: #ffffff;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  /* Overlay scrim (modal backdrops) */
+  --color-overlay-scrim: rgba(12,18,40,.25);
 
-  --shadow-sm: 0 1px 2px 0 rgb(33 29 24 / 0.04);
-  --shadow-md: 0 8px 24px -4px rgb(33 29 24 / 0.08);
+  /* Legacy aliases — kept so existing components using these names don't break.
+     New code should use the canonical names above. */
+  --color-surface-raised: rgba(255,255,255,.90);
+  --color-surface-raised-foreground: #0c1222;
+  --color-glass-surface-subtle: rgba(255,255,255,.35);
+  --color-glass-surface-strong: rgba(255,255,255,.70);
+  --color-glass-surface-inverse: rgba(15,13,10,.85);
+  --color-glass-border-strong: rgba(255,255,255,.90);
+  --color-glass-highlight: rgba(255,255,255,.70);
 
-  --color-glass-surface-subtle: rgb(255 255 255 / 0.35);
-  --color-glass-surface: rgb(255 255 255 / 0.55);
-  --color-glass-surface-strong: rgb(255 255 255 / 0.5);
-  --color-glass-surface-inverse: rgb(15 13 10 / 0.85);
-  --color-glass-border: rgb(255 255 255 / 0.6);
-  --color-glass-border-strong: rgb(255 255 255 / 0.8);
-  --color-glass-highlight: rgb(255 255 255 / 0.7);
-  --color-overlay-scrim: rgb(33 29 24 / 0.18);
+  /* Shadows (PeopleHR --sh / --shSm) */
+  --shadow-sm: 0 1px 3px 0 rgba(12,18,40,.06);
+  --shadow-md: 0 8px 24px -4px rgba(12,18,40,.12);
+  --shadow-glass-sm: 0 12px 30px rgba(24,34,64,.10);
+  --shadow-glass-md: 0 30px 70px rgba(24,34,64,.16),
+    inset 0 1px 0 0 rgba(255,255,255,.70);
+  --shadow-glass-glow: 0 0 48px -16px rgba(17,24,39,.28);
 
-  --shadow-glass-sm: 0 2px 8px -2px rgb(33 29 24 / 0.06);
-  --shadow-glass-md: 0 12px 32px -8px rgb(33 29 24 / 0.14), inset 0 1px 0 0 var(--color-glass-highlight);
-  --shadow-glass-glow: 0 0 48px -16px rgb(37 99 235 / 0.32);
+  /* Radius scale */
+  --radius-sm: 0.5rem;    /* 8px  — small elements */
+  --radius-md: 0.875rem;  /* 14px — inputs, buttons */
+  --radius-lg: 1rem;      /* 16px — cards */
+  --radius-xl: 1.5rem;    /* 24px — large glass panels */
+  --radius-2xl: 1.75rem;  /* 28px — modals, drawers */
+  --radius-pill: 624.9375rem; /* pills, toggles */
 
-  --blur-glass-sm: 4px;
-  --blur-glass-md: 12px;
-  --blur-glass-lg: 24px;
-
-  --gradient-decorative: radial-gradient(at 15% -10%, rgb(37 99 235 / 0.14) 0%, transparent 55%),
-    radial-gradient(at 85% 0%, rgb(8 145 178 / 0.12) 0%, transparent 50%),
-    radial-gradient(at 50% 100%, rgb(22 163 74 / 0.08) 0%, transparent 60%);
+  /* Blur scale — PeopleHR uses 20–30px on glass surfaces */
+  --blur-glass-sm: 8px;
+  --blur-glass-md: 20px;
+  --blur-glass-lg: 28px;
 }
 
+/* ─── Dark mode — system preference ────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg-base: linear-gradient(180deg, #0b0e18, #090b11);
+    --color-bg-gradient: radial-gradient(ellipse at 20% -10%, rgba(99,102,241,.14) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 5%, rgba(34,211,238,.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(16,185,129,.07) 0%, transparent 60%);
+
+    --color-primary: #eceef3;
+    --color-primary-alt: #aab2c2;
+    --color-primary-foreground: #111827;
+    --color-primary-weak: rgba(236,238,243,.14);
+
+    --color-text: #eef2fb;
+    --color-text-muted: #aab3c5;
+    --color-text-subtle: #727c8f;
+
+    --color-border: rgba(255,255,255,.09);
+    --color-border-subtle: rgba(255,255,255,.05);
+
+    --color-glass-surface: rgba(28,33,48,.55);
+    --color-glass-border: rgba(255,255,255,.10);
+
+    --color-surface: rgba(40,46,64,.72);
+    --color-surface-border: rgba(255,255,255,.10);
+
+    --color-chip: rgba(255,255,255,.06);
+
+    --color-success: #3ad18b;
+    --color-success-foreground: #052e16;
+    --color-warning: #ffbe4d;
+    --color-warning-foreground: #221a05;
+    --color-danger: #ff6b72;
+    --color-danger-foreground: #2a0a0a;
+    --color-info: #22d3ee;
+    --color-info-foreground: #042f2e;
+
+    --color-overlay-scrim: rgba(0,0,0,.45);
+
+    --color-surface-raised: rgba(40,46,64,.80);
+    --color-surface-raised-foreground: #eef2fb;
+    --color-glass-surface-subtle: rgba(255,255,255,.04);
+    --color-glass-surface-strong: rgba(255,255,255,.10);
+    --color-glass-surface-inverse: rgba(15,13,10,.85);
+    --color-glass-border-strong: rgba(255,255,255,.18);
+    --color-glass-highlight: rgba(255,255,255,.08);
+
+    --shadow-sm: 0 1px 3px 0 rgba(0,0,0,.30);
+    --shadow-md: 0 8px 24px -4px rgba(0,0,0,.50);
+    --shadow-glass-sm: 0 12px 30px rgba(0,0,0,.35);
+    --shadow-glass-md: 0 30px 70px rgba(0,0,0,.50),
+      inset 0 1px 0 0 rgba(255,255,255,.08);
+    --shadow-glass-glow: 0 0 48px -16px rgba(236,238,243,.18);
+  }
+}
+
+/* ─── Dark mode — explicit data-theme toggle (wins over media query) ─────── */
+
 :root[data-theme="dark"] {
-  --color-bg: #16140f;
-  --color-surface: #201c17;
-  --color-surface-raised: #0f0d0a;
-  --color-surface-raised-foreground: #f3efe9;
-  --color-border: #322c24;
+  --color-bg-base: linear-gradient(180deg, #0b0e18, #090b11);
+  --color-bg-gradient: radial-gradient(ellipse at 20% -10%, rgba(99,102,241,.14) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 5%, rgba(34,211,238,.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(16,185,129,.07) 0%, transparent 60%);
 
-  --color-text: #f3efe9;
-  --color-text-muted: #9b9284;
+  --color-primary: #eceef3;
+  --color-primary-alt: #aab2c2;
+  --color-primary-foreground: #111827;
+  --color-primary-weak: rgba(236,238,243,.14);
 
-  --color-primary: #60a5fa;
-  --color-primary-foreground: #0b1220;
+  --color-text: #eef2fb;
+  --color-text-muted: #aab3c5;
+  --color-text-subtle: #727c8f;
 
-  --color-success: #4ade80;
+  --color-border: rgba(255,255,255,.09);
+  --color-border-subtle: rgba(255,255,255,.05);
+
+  --color-glass-surface: rgba(28,33,48,.55);
+  --color-glass-border: rgba(255,255,255,.10);
+
+  --color-surface: rgba(40,46,64,.72);
+  --color-surface-border: rgba(255,255,255,.10);
+
+  --color-chip: rgba(255,255,255,.06);
+
+  --color-success: #3ad18b;
   --color-success-foreground: #052e16;
-  --color-warning: #fbbf24;
+  --color-warning: #ffbe4d;
   --color-warning-foreground: #221a05;
-  --color-danger: #f87171;
+  --color-danger: #ff6b72;
   --color-danger-foreground: #2a0a0a;
   --color-info: #22d3ee;
   --color-info-foreground: #042f2e;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.24);
-  --shadow-md: 0 8px 24px -4px rgb(0 0 0 / 0.4);
+  --color-overlay-scrim: rgba(0,0,0,.45);
 
-  --color-glass-surface-subtle: rgb(255 255 255 / 0.04);
-  --color-glass-surface: rgb(255 255 255 / 0.06);
-  --color-glass-surface-strong: rgb(255 255 255 / 0.08);
-  --color-glass-surface-inverse: rgb(15 13 10 / 0.85);
-  --color-glass-border: rgb(255 255 255 / 0.12);
-  --color-glass-border-strong: rgb(255 255 255 / 0.18);
-  --color-glass-highlight: rgb(255 255 255 / 0.08);
-  --color-overlay-scrim: rgb(0 0 0 / 0.35);
+  --color-surface-raised: rgba(40,46,64,.80);
+  --color-surface-raised-foreground: #eef2fb;
+  --color-glass-surface-subtle: rgba(255,255,255,.04);
+  --color-glass-surface-strong: rgba(255,255,255,.10);
+  --color-glass-surface-inverse: rgba(15,13,10,.85);
+  --color-glass-border-strong: rgba(255,255,255,.18);
+  --color-glass-highlight: rgba(255,255,255,.08);
 
-  --shadow-glass-sm: 0 2px 8px -2px rgb(0 0 0 / 0.3);
-  --shadow-glass-md: 0 12px 32px -8px rgb(0 0 0 / 0.5), inset 0 1px 0 0 var(--color-glass-highlight);
-  --shadow-glass-glow: 0 0 48px -16px rgb(96 165 250 / 0.26);
-
-  --gradient-decorative: radial-gradient(at 15% -10%, rgb(96 165 250 / 0.18) 0%, transparent 55%),
-    radial-gradient(at 85% 0%, rgb(34 211 238 / 0.14) 0%, transparent 50%),
-    radial-gradient(at 50% 100%, rgb(74 222 128 / 0.1) 0%, transparent 60%);
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,.30);
+  --shadow-md: 0 8px 24px -4px rgba(0,0,0,.50);
+  --shadow-glass-sm: 0 12px 30px rgba(0,0,0,.35);
+  --shadow-glass-md: 0 30px 70px rgba(0,0,0,.50),
+    inset 0 1px 0 0 rgba(255,255,255,.08);
+  --shadow-glass-glow: 0 0 48px -16px rgba(236,238,243,.18);
 }
