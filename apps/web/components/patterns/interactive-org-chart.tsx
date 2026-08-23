@@ -100,6 +100,7 @@ export function InteractiveOrgChart({ nodes, search, deptFilter }: Props) {
   useEffect(() => {
     if (rootId) {
       const root = nodeMap.get(rootId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (root) setCrumb([root.name]);
     }
   }, [rootId, nodeMap]);
@@ -305,6 +306,7 @@ export function InteractiveOrgChart({ nodes, search, deptFilter }: Props) {
 
         {/* Zoom controls */}
         <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1">
+          {/* eslint-disable-next-line react-hooks/refs */}
           {([
             ["＋", () => setScale((s) => Math.min(2.5, s + 0.15))],
             ["－", () => setScale((s) => Math.max(0.25, s - 0.15))],

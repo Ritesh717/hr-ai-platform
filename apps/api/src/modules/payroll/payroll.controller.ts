@@ -27,8 +27,14 @@ export class PayrollController {
   }
 
   @Get('payslips/:id')
-  getPayslip(@Param('id') id: string): Promise<PayslipResponseDto> {
-    return this.payrollService.getPayslip(id);
+  getPayslip(
+    @Param('id') id: string,
+    @CurrentEmployee() current: CurrentEmployeeType,
+  ): Promise<PayslipResponseDto> {
+    return this.payrollService.getPayslip(id, {
+      tenantId: current.tenantId,
+      employeeId: current.employeeId,
+    });
   }
 
   /** HR/admin: set or update an employee's payroll configuration */
@@ -37,7 +43,12 @@ export class PayrollController {
     @Body() dto: PayrollConfigUpsertDto,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<void> {
-    return this.payrollService.upsertConfig(current.tenantId, current.employeeId, dto);
+    return this.payrollService.upsertConfig(
+      current.tenantId,
+      current.employeeId,
+      current.permissions,
+      dto,
+    );
   }
 
   /** HR/admin: issue a payslip for an employee */
@@ -46,6 +57,6 @@ export class PayrollController {
     @Body() dto: PayslipCreateDto,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<PayslipResponseDto> {
-    return this.payrollService.createPayslip(current.tenantId, dto);
+    return this.payrollService.createPayslip(current.tenantId, current.permissions, dto);
   }
 }

@@ -11,6 +11,11 @@ export enum PermissionCode {
   LEAVE_READ = 'leave.read',
   LEAVE_APPROVE = 'leave.approve',
   LEAVE_MANAGE = 'leave.manage',
+  EXPENSE_APPROVE = 'expense.approve',
+  EXPENSE_MANAGE = 'expense.manage',
+  PAYROLL_MANAGE = 'payroll.manage',
+  ANALYTICS_READ = 'analytics.read',
+  RECRUITMENT_MANAGE = 'recruitment.manage',
 }
 
 export const ALL_PERMISSION_CODES: PermissionCode[] = Object.values(PermissionCode);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   CheckCircle2,
@@ -15,10 +15,13 @@ import {
   X,
 } from "lucide-react";
 import {
+  createExpenseReport,
   fetchExpenseHistory,
   simulateOcrExtraction,
+  submitExpenseReport,
 } from "@/lib/api/expenses";
 import type { ExpenseCategory, ExpenseReport, ExpenseStatus } from "@/lib/api/expenses";
+import { useToast } from "@/components/ui/toast";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -100,7 +103,7 @@ function ReceiptUploadStep({ onConfirm, onCancel }: ReceiptUploadProps) {
       <div>
         <p className="font-semibold text-text">Upload receipt</p>
         <p className="mt-0.5 text-sm text-text-muted">
-          We'll extract the details automatically. You can review and edit before saving.
+          {"We'll"} extract the details automatically. You can review and edit before saving.
         </p>
       </div>
 
@@ -204,6 +207,127 @@ function ReceiptUploadStep({ onConfirm, onCancel }: ReceiptUploadProps) {
 
 // ── New expense form ───────────────────────────────────────────────────────────
 
+interface ExpenseDetailsFormProps {
+  prefill: { vendor: string; amount: number; date: string } | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function ExpenseDetailsForm({ prefill, onClose, onSaved }: ExpenseDetailsFormProps) {
+  const push = useToast();
+  const queryClient = useQueryClient();
+  const [category, setCategory] = useState<ExpenseCategory>("travel");
+  const [amount, setAmount] = useState(prefill?.amount?.toString() ?? "");
+  const [date, setDate] = useState(prefill?.date ?? "");
+  const [vendor, setVendor] = useState(prefill?.vendor ?? "");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function save(andSubmit: boolean) {
+    if (!amount || !date || !vendor) {
+      push({ title: "Please fill in amount, date, and vendor", tone: "error" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const title = vendor || `Expense ${date}`;
+      const report = await createExpenseReport({
+        title,
+        currency: "GBP",
+        items: [{
+          category,
+          description: description || vendor,
+          amount: parseFloat(amount),
+          currency: "GBP",
+          date,
+        }],
+      });
+      if (andSubmit) {
+        await submitExpenseReport(report.id);
+        push({ title: "Expense submitted for approval", description: "Your manager will be notified.", tone: "success" });
+      } else {
+        push({ title: "Expense saved as draft", tone: "success" });
+      }
+      void queryClient.invalidateQueries({ queryKey: ["expense-history"] });
+      onSaved();
+    } catch {
+      push({ title: "Failed to save expense", description: "Please try again.", tone: "error" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <p className="font-semibold text-text">Expense details</p>
+        <button type="button" onClick={onClose} className="text-text-muted hover:text-text">
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>Category</Label>
+          <Select value={category} onValueChange={(v) => setCategory(v as ExpenseCategory)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Amount (£)</Label>
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Date</Label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Vendor / merchant</Label>
+          <Input
+            value={vendor}
+            onChange={(e) => setVendor(e.target.value)}
+            placeholder="e.g. Marriott Hotels"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Description <span className="text-text-subtle">(optional)</span></Label>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description of this expense…"
+          rows={2}
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button intent="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button intent="secondary" onClick={() => save(false)} disabled={saving}>
+          {saving ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
+          Save as draft
+        </Button>
+        <Button onClick={() => save(true)} disabled={saving}>
+          <Receipt className="mr-1.5 size-4" />
+          Submit for approval
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 interface NewExpenseFormProps {
   onClose: () => void;
 }
@@ -228,56 +352,7 @@ function NewExpenseForm({ onClose }: NewExpenseFormProps) {
 
   return (
     <Card className="p-6">
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <p className="font-semibold text-text">Expense details</p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text">
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label>Category</Label>
-            <Select defaultValue="travel">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Amount (£)</Label>
-            <Input type="number" defaultValue={prefill?.amount ?? ""} placeholder="0.00" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Date</Label>
-            <Input type="date" defaultValue={prefill?.date ?? ""} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Vendor / merchant</Label>
-            <Input defaultValue={prefill?.vendor ?? ""} placeholder="e.g. Marriott Hotels" />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label>Description</Label>
-          <Textarea placeholder="Brief description of this expense…" rows={2} />
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button intent="ghost" onClick={onClose}>Cancel</Button>
-          <Button intent="secondary" onClick={onClose}>Save as draft</Button>
-          <Button onClick={onClose}>
-            <Receipt className="mr-1.5 size-4" />
-            Submit for approval
-          </Button>
-        </div>
-      </div>
+      <ExpenseDetailsForm prefill={prefill} onClose={onClose} onSaved={onClose} />
     </Card>
   );
 }
@@ -298,11 +373,13 @@ function HistoryCard({ report }: { report: ExpenseReport }) {
         <div className="flex-1 min-w-0">
           <p className="font-medium text-text">{report.title}</p>
           <p className="text-xs text-text-muted">
-            {new Date(report.submittedAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+            {report.submittedAt
+              ? new Date(report.submittedAt).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Draft"}
             {" · "}
             {report.items.length} item{report.items.length !== 1 ? "s" : ""}
           </p>

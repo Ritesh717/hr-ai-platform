@@ -12,6 +12,8 @@ export const DEFAULT_ROLE_TEMPLATES: Record<RoleName, PermissionCode[]> = {
     PermissionCode.DEPARTMENT_READ,
     PermissionCode.LEAVE_READ,
     PermissionCode.LEAVE_APPROVE,
+    PermissionCode.EXPENSE_APPROVE,
+    PermissionCode.ANALYTICS_READ,
   ],
   [RoleName.HR_ADMIN]: [
     PermissionCode.EMPLOYEE_READ,
@@ -24,5 +26,10 @@ export const DEFAULT_ROLE_TEMPLATES: Record<RoleName, PermissionCode[]> = {
     PermissionCode.LEAVE_READ,
     PermissionCode.LEAVE_APPROVE,
     PermissionCode.LEAVE_MANAGE,
+    PermissionCode.EXPENSE_APPROVE,
+    PermissionCode.EXPENSE_MANAGE,
+    PermissionCode.PAYROLL_MANAGE,
+    PermissionCode.ANALYTICS_READ,
+    PermissionCode.RECRUITMENT_MANAGE,
   ],
 };

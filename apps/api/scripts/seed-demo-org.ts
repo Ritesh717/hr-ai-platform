@@ -21,6 +21,10 @@ import { AppError } from '../src/common/errors/app.error';
 import { DepartmentRepository } from '../src/modules/department/department.repository';
 import { EmployeeRepository } from '../src/modules/employee/employee.repository';
 import { EmployeeDocument, EmployeeStatus } from '../src/modules/employee/schemas/employee.schema';
+import { PayslipRepository } from '../src/modules/payroll/payslip.repository';
+import { PayslipStatus } from '../src/modules/payroll/schemas/payslip.schema';
+import { JobRepository } from '../src/modules/recruitment/repositories/job.repository';
+import { ExperienceLevel, JobStatus, JobType } from '../src/modules/recruitment/schemas/job.schema';
 import { RoleName } from '../src/modules/rbac/constants/permission-code.enum';
 import { RoleRepository } from '../src/modules/rbac/role.repository';
 import { RoleDocument } from '../src/modules/rbac/schemas/role.schema';
@@ -153,6 +157,138 @@ async function createEmployee(
   });
 }
 
+// Salary bands by job title keyword
+function baseSalaryForTitle(title: string, rng: () => number): number {
+  const t = title.toLowerCase();
+  if (t.includes('head') || t.includes('director')) return 90000 + Math.floor(rng() * 30000);
+  if (t.includes('lead') || t.includes('senior') || t.includes('manager')) return 70000 + Math.floor(rng() * 20000);
+  return 45000 + Math.floor(rng() * 20000);
+}
+
+async function seedPayslips(
+  payslipRepo: PayslipRepository,
+  employees: EmployeeDocument[],
+  tenantId: string,
+  rng: () => number,
+): Promise<void> {
+  const now = new Date();
+  const MONTHS_BACK = 6;
+  for (const emp of employees) {
+    const gross = baseSalaryForTitle(emp.jobTitle, rng) / 12;
+    const tax = gross * 0.2;
+    const ni = gross * 0.12;
+    const net = gross - tax - ni;
+    for (let m = MONTHS_BACK; m >= 1; m--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth(); // 0-indexed
+      const periodStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const periodEnd = `${year}-${String(month + 1).padStart(2, '0')}-${lastDay}`;
+      const monthLabel = d.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+      try {
+        await payslipRepo.create(tenantId, {
+          employeeId: (emp._id as Types.ObjectId).toString(),
+          month: monthLabel,
+          periodStart,
+          periodEnd,
+          grossAmount: Math.round(gross * 100) / 100,
+          netAmount: Math.round(net * 100) / 100,
+          currency: 'GBP',
+          status: PayslipStatus.PAID,
+          breakdown: [
+            { label: 'Basic salary', amount: Math.round(gross * 100) / 100 },
+            { label: 'Income tax', amount: Math.round(tax * 100) / 100, isDeduction: true },
+            { label: 'National Insurance', amount: Math.round(ni * 100) / 100, isDeduction: true },
+            { label: 'Net pay', amount: Math.round(net * 100) / 100, isNet: true },
+          ],
+        });
+      } catch {
+        // Unique-index violation on re-run — skip silently
+      }
+    }
+  }
+}
+
+const JOB_POSTINGS = [
+  {
+    title: 'Senior Software Engineer',
+    department: 'Engineering',
+    location: 'London, UK',
+    type: JobType.FULL_TIME,
+    experienceLevel: ExperienceLevel.SENIOR,
+    description: 'Join our engineering team to build scalable backend services and APIs.',
+    sections: [
+      { heading: 'What you will do', body: 'Design and implement RESTful APIs, mentor junior engineers, participate in architecture reviews.' },
+      { heading: 'What we are looking for', body: '5+ years backend experience, Node.js or Python, cloud infrastructure (AWS/GCP), excellent communication.' },
+    ],
+  },
+  {
+    title: 'Product Manager',
+    department: 'Product',
+    location: 'Remote',
+    type: JobType.REMOTE,
+    experienceLevel: ExperienceLevel.MID,
+    description: 'Drive product strategy and execution for our core HR platform.',
+    sections: [
+      { heading: 'What you will do', body: 'Define product roadmap, collaborate with engineering and design, gather customer insights.' },
+      { heading: 'What we are looking for', body: '3+ years product management experience, strong analytical skills, Agile familiarity.' },
+    ],
+  },
+  {
+    title: 'UX Designer',
+    department: 'Design',
+    location: 'New York, NY',
+    type: JobType.FULL_TIME,
+    experienceLevel: ExperienceLevel.MID,
+    description: 'Create delightful, accessible user experiences for our HR platform.',
+    sections: [
+      { heading: 'What you will do', body: 'Conduct user research, create wireframes and prototypes, work closely with engineers to ship polished UI.' },
+      { heading: 'What we are looking for', body: '3+ years UX design experience, proficiency in Figma, portfolio demonstrating B2B SaaS work.' },
+    ],
+  },
+  {
+    title: 'Account Executive',
+    department: 'Sales',
+    location: 'San Francisco, CA',
+    type: JobType.FULL_TIME,
+    experienceLevel: ExperienceLevel.MID,
+    description: 'Close enterprise deals and grow our customer base.',
+    sections: [
+      { heading: 'What you will do', body: 'Manage a pipeline of mid-market and enterprise prospects, run demos, negotiate contracts.' },
+      { heading: 'What we are looking for', body: '3+ years SaaS sales experience, track record of quota attainment, excellent communication.' },
+    ],
+  },
+  {
+    title: 'DevOps Engineer',
+    department: 'Engineering',
+    location: 'Remote',
+    type: JobType.REMOTE,
+    experienceLevel: ExperienceLevel.SENIOR,
+    description: 'Own infrastructure, CI/CD pipelines, and platform reliability.',
+    sections: [
+      { heading: 'What you will do', body: 'Manage Kubernetes clusters, build deployment pipelines, drive SRE practices.' },
+      { heading: 'What we are looking for', body: '4+ years DevOps/SRE experience, Kubernetes, Terraform, cloud-native monitoring.' },
+    ],
+  },
+];
+
+async function seedJobs(jobRepo: JobRepository, tenantId: string): Promise<void> {
+  const baseDate = new Date();
+  for (let i = 0; i < JOB_POSTINGS.length; i++) {
+    const posting = JOB_POSTINGS[i];
+    const daysAgo = 5 + i * 7;
+    const postedDate = new Date(baseDate);
+    postedDate.setDate(postedDate.getDate() - daysAgo);
+    const postedAt = postedDate.toISOString().slice(0, 10);
+    try {
+      await jobRepo.create(tenantId, { ...posting, postedAt, status: JobStatus.OPEN });
+    } catch {
+      // Already exists — skip
+    }
+  }
+}
+
 async function seed(plan: SeedPlan): Promise<void> {
   const rng = makeRng(plan.seed);
   const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
@@ -162,6 +298,8 @@ async function seed(plan: SeedPlan): Promise<void> {
     const employeeRepo = app.get(EmployeeRepository);
     const departmentRepo = app.get(DepartmentRepository);
     const roleRepo = app.get(RoleRepository);
+    const payslipRepo = app.get(PayslipRepository);
+    const jobRepo = app.get(JobRepository);
 
     const { tenant, admin } = await tenantService.bootstrap({
       tenantName: plan.tenantName,
@@ -206,6 +344,7 @@ async function seed(plan: SeedPlan): Promise<void> {
     const extra = icCount % DEPARTMENTS.length;
     const icCounts = DEPARTMENTS.map((_, i) => base + (i < extra ? 1 : 0));
 
+    const allEmployees: EmployeeDocument[] = [];
     let created = 0;
     for (let di = 0; di < DEPARTMENTS.length; di++) {
       const deptName = DEPARTMENTS[di];
@@ -222,6 +361,7 @@ async function seed(plan: SeedPlan): Promise<void> {
         hashedPassword,
         jobTitle: `Head of ${deptName}`,
       });
+      allEmployees.push(head);
       created += 1;
 
       const leads: EmployeeDocument[] = [];
@@ -238,6 +378,7 @@ async function seed(plan: SeedPlan): Promise<void> {
           jobTitle: `${deptName} Team Lead`,
         });
         leads.push(lead);
+        allEmployees.push(lead);
         created += 1;
       }
 
@@ -245,7 +386,7 @@ async function seed(plan: SeedPlan): Promise<void> {
       for (let i = 0; i < icCounts[di]; i++) {
         const [icName, icEmail] = nextIdentity();
         const lead = leads[i % leads.length];
-        await createEmployee(employeeRepo, rng, {
+        const ic = await createEmployee(employeeRepo, rng, {
           tenantId,
           departmentId: department._id as Types.ObjectId,
           managerId: lead._id as Types.ObjectId,
@@ -255,9 +396,20 @@ async function seed(plan: SeedPlan): Promise<void> {
           hashedPassword,
           jobTitle: randomChoice(titles, rng),
         });
+        allEmployees.push(ic);
         created += 1;
       }
     }
+
+    // Seed payslips (6 months) for all employees, including the admin
+    const adminDoc = await employeeRepo.getById(admin._id, tenantId);
+    const payslipTargets = adminDoc ? [adminDoc, ...allEmployees] : allEmployees;
+    console.log(`Seeding payslips for ${payslipTargets.length} employees (6 months each)...`);
+    await seedPayslips(payslipRepo, payslipTargets, tenantId.toString(), rng);
+
+    // Seed open job postings
+    console.log(`Seeding ${JOB_POSTINGS.length} open job postings...`);
+    await seedJobs(jobRepo, tenantId.toString());
 
     const total = 1 + created;
     console.log(

@@ -31,7 +31,7 @@ export interface ExpenseItem {
 export interface ExpenseReport {
   id: string;
   title: string;
-  submittedAt: string;
+  submittedAt?: string;
   status: ExpenseStatus;
   total: number;
   currency: string;
@@ -56,6 +56,14 @@ export async function createExpenseReport(payload: ExpenseReportCreatePayload): 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+export async function submitExpenseReport(id: string): Promise<ExpenseReport> {
+  return apiFetch<ExpenseReport>(`/api/v1/expenses/${id}/submit`, { method: "PATCH" });
+}
+
+export async function fetchPendingExpenseApprovals(): Promise<ExpenseReport[]> {
+  return apiFetch<ExpenseReport[]>("/api/v1/expenses/pending-approval");
 }
 
 export async function approveExpenseReport(id: string): Promise<ExpenseReport> {

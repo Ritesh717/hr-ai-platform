@@ -34,8 +34,36 @@ export class ExpenseRepository {
     });
   }
 
-  async updateStatus(id: string, status: ExpenseStatus): Promise<ExpenseReportDocument | null> {
-    return this.model.findByIdAndUpdate(id, { $set: { status } }, { new: true });
+  async submit(id: string): Promise<ExpenseReportDocument | null> {
+    return this.model.findByIdAndUpdate(
+      id,
+      { $set: { status: ExpenseStatus.SUBMITTED, submittedAt: new Date().toISOString() } },
+      { new: true },
+    );
+  }
+
+  async updateStatus(
+    id: string,
+    status: ExpenseStatus,
+    approvedById?: string,
+  ): Promise<ExpenseReportDocument | null> {
+    const update: Record<string, unknown> = { status };
+    if (approvedById) update.approvedById = new Types.ObjectId(approvedById);
+    return this.model.findByIdAndUpdate(id, { $set: update }, { new: true });
+  }
+
+  async findSubmittedForManager(
+    tenantId: string,
+    managerEmployeeIds: string[],
+  ): Promise<ExpenseReportDocument[]> {
+    if (managerEmployeeIds.length === 0) return [];
+    return this.model
+      .find({
+        tenantId: new Types.ObjectId(tenantId),
+        employeeId: { $in: managerEmployeeIds.map((id) => new Types.ObjectId(id)) },
+        status: ExpenseStatus.SUBMITTED,
+      })
+      .sort({ submittedAt: -1 });
   }
 
   async delete(id: string): Promise<void> {

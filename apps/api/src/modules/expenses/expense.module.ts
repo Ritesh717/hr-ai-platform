@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { EmployeeModule } from '../employee/employee.module';
+import { NotificationModule } from '../notifications/notification.module';
 import { ExpenseController } from './expense.controller';
 import { ExpenseRepository } from './expense.repository';
 import { ExpenseService } from './expense.service';
@@ -10,6 +12,8 @@ import { ExpenseReport, ExpenseReportSchema } from './schemas/expense-report.sch
     MongooseModule.forFeature([
       { name: ExpenseReport.name, schema: ExpenseReportSchema },
     ]),
+    EmployeeModule,
+    NotificationModule,
   ],
   controllers: [ExpenseController],
   providers: [ExpenseRepository, ExpenseService],

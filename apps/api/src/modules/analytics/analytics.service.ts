@@ -4,6 +4,8 @@ import { Model, Types } from 'mongoose';
 import { Employee, EmployeeDocument } from '../employee/schemas/employee.schema';
 import { LeaveRequest, LeaveRequestDocument } from '../leave/schemas/leave-request.schema';
 import { Payslip, PayslipDocument } from '../payroll/schemas/payslip.schema';
+import { requirePermission } from '../rbac/authorization';
+import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { AnalyticsResponseDto, MonthPoint } from './dto/analytics-response.dto';
 
 const MONTH_ABBREV = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -26,7 +28,11 @@ export class AnalyticsService {
     @InjectModel(Payslip.name) private readonly payslipModel: Model<PayslipDocument>,
   ) {}
 
-  async getAnalytics(tenantId: string): Promise<AnalyticsResponseDto> {
+  async getAnalytics(
+    tenantId: string,
+    actorPermissions: ReadonlySet<PermissionCode>,
+  ): Promise<AnalyticsResponseDto> {
+    requirePermission(actorPermissions, PermissionCode.ANALYTICS_READ);
     const [headcount, leaveUtilization, payrollSpend] = await Promise.all([
       this.headcountTrend(tenantId),
       this.leaveUtilizationTrend(tenantId),

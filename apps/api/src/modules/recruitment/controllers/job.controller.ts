@@ -31,6 +31,6 @@ export class JobController {
     @Body() dto: JobCreateDto,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<JobResponseDto> {
-    return this.jobService.createJob(current.tenantId, dto);
+    return this.jobService.createJob(current.tenantId, dto, current.permissions);
   }
 }

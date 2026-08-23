@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AuthorizationError, NotFoundError, ValidationAppError } from '../../common/errors/app.error';
 import { EmployeeRepository } from '../employee/employee.repository';
+import { NotificationCategory, NotificationType } from '../notifications/schemas/notification.schema';
+import { NotificationService } from '../notifications/notification.service';
 import { requirePermission } from '../rbac/authorization';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { HolidayCreateDto } from './dto/holiday-create.dto';
@@ -26,6 +28,7 @@ export class LeaveService {
     private readonly leaveRequestRepository: LeaveRequestRepository,
     private readonly holidayRepository: HolidayRepository,
     private readonly employeeRepository: EmployeeRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async listRequests(params: {
@@ -75,7 +78,25 @@ export class LeaveService {
     request.approverId = new Types.ObjectId(params.actorId);
     request.approverComment = comment ?? null;
     request.respondedAt = new Date();
-    return this.leaveRequestRepository.save(request);
+    const saved = await this.leaveRequestRepository.save(request);
+
+    if (status === LeaveStatus.APPROVED || status === LeaveStatus.REJECTED) {
+      const approved = status === LeaveStatus.APPROVED;
+      const days = daysBetweenInclusive(saved.startDate, saved.endDate);
+      void this.notificationService.emit({
+        tenantId: params.tenantId,
+        recipientId: saved.employeeId.toString(),
+        type: NotificationType.LEAVE,
+        category: approved ? NotificationCategory.UPDATE : NotificationCategory.ACTION,
+        title: approved ? 'Leave request approved' : 'Leave request rejected',
+        body: approved
+          ? `Your ${saved.type} leave request for ${days} day(s) has been approved.`
+          : `Your ${saved.type} leave request for ${days} day(s) has been rejected.${comment ? ` Reason: ${comment}` : ''}`,
+        href: '/time-off',
+      });
+    }
+
+    return saved;
   }
 
   async editRequest(

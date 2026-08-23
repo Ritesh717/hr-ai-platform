@@ -25,7 +25,7 @@ is still an open decision — see the note in `CLAUDE.md`'s "Backend implementat
 | Stage | Adds | Status |
 |---|---|---|
 | 1 | FastAPI + PostgreSQL + SQLAlchemy + Alembic + Auth + Employee CRUD | ✅ done (now under `apps/deprecated/api/`) |
-| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ⏳ in progress (stories #1, #2 done) |
+| 2 | Employee Agent + tool calling + tracing (first tool-using agent) | ✅ done (agent stories #1–#6 + all 12 frontend integration epics) |
 | 3 | RAG + pgvector + Policy Agent | not started |
 | 4 | Leave Agent + human approval + audit logs (first action-taking agent) | not started |
 | 5 | Expense Agent + document processing (OCR/extraction) | not started |
@@ -314,3 +314,28 @@ Re-verified after the `apps/api-node` → `apps/api` rename and the Python backe
       endpoint coverage in `test/agent-chat.e2e-spec.ts`, this plan.md update); **manual
       browser pass with real LLM API key not yet run** — requires Docker + a configured
       `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` in a real dev environment.
+
+### Stage 2 Frontend Integration Epics (INT-1 through INT-12)
+
+All 12 integration epics wiring the Next.js frontend to the NestJS backend are done.
+Each landed as its own squash-merged PR.
+
+- [x] INT-1 — Auth (`/api/v1/auth/login`, JWT cookie, `apiFetch` client with `Authorization` header auto-inject)
+- [x] INT-2 — Employees (list, paginate, search, create, edit, deactivate wired to `/api/v1/employees`)
+- [x] INT-3 — Departments (list, create, rename, delete wired to `/api/v1/departments`)
+- [x] INT-4 — Roles & Permissions (`/api/v1/roles`, `/api/v1/permissions`, create/edit role with permission picker)
+- [x] INT-5 — Audit Logs (`/api/v1/audit-logs`, actor name resolution, pagination)
+- [x] INT-6 — Leave (`/api/v1/leave/requests`, `/leave/balance`, `/leave/holidays`, `/leave/team`, approve/reject manager view)
+- [x] INT-7 — Time Attendance (`/api/v1/time/records`, clock-in/out, current-week summary)
+- [x] INT-8 — Payroll (`/api/v1/payroll/summary`, `/payroll/payslips`, payslip detail — payslip schema + repository + service + controller added as `PayrollModule`)
+- [x] INT-9 — Expenses (`/api/v1/expenses` CRUD, approve/reject — `ExpenseModule` added with embedded `ExpenseItem[]` schema)
+- [x] INT-10 — Notifications (`/api/v1/notifications`, mark-read, dismiss, mark-all-read — `NotificationModule` added)
+- [x] INT-11 — Analytics (`/api/v1/analytics` returning headcount trend, leave utilisation, payroll spend — `AnalyticsModule` using Mongo aggregation read-only)
+- [x] INT-12 — Recruitment (`/api/v1/jobs`, `/api/v1/applications`, `/api/v1/interviews` — `RecruitmentModule` with Job/Application/Interview schemas)
+
+### Stage 2 Close-Gaps (branch `stage2/close-gaps`)
+
+- [x] Cross-module notification wiring: `LeaveService.updateStatus()` now emits a notification to the employee on approve/reject; `ExpenseService.approveReport()`/`rejectReport()` emit notifications on status change. `NotificationModule` added to `LeaveModule` and `ExpenseModule` imports.
+- [x] Seed data extended: `seed-demo-org.ts` now seeds 6 months of payslips for all employees (salary bands derived from job title) and 5 open job postings across Engineering/Product/Design/Sales departments.
+- [x] `plan.md` updated to reflect all Stage 2 integration epics as complete.
+- [x] E2E tests for new modules: `test/payroll.e2e-spec.ts` (6 cases), `test/expenses.e2e-spec.ts` (6), `test/notifications.e2e-spec.ts` (6), `test/recruitment.e2e-spec.ts` (8), `test/analytics.e2e-spec.ts` (3) — 29 total. Require a real mongod (or docker-compose MongoDB replica set); `mongodb-memory-server` can't download the binary in network-restricted CI/cloud envs — run them locally with `docker compose up -d mongo mongo-rs-init` then `npm run test:e2e`.

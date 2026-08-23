@@ -42,6 +42,22 @@ const PERM_GROUPS: { label: string; codes: PermissionCode[] }[] = [
     codes: ["leave.read", "leave.approve", "leave.manage"],
   },
   {
+    label: "Expense",
+    codes: ["expense.approve", "expense.manage"],
+  },
+  {
+    label: "Payroll",
+    codes: ["payroll.manage"],
+  },
+  {
+    label: "Analytics",
+    codes: ["analytics.read"],
+  },
+  {
+    label: "Recruitment",
+    codes: ["recruitment.manage"],
+  },
+  {
     label: "RBAC",
     codes: ["rbac.manage"],
   },
@@ -52,16 +68,21 @@ const PERM_GROUPS: { label: string; codes: PermissionCode[] }[] = [
 ];
 
 const PERM_LABEL: Record<PermissionCode, string> = {
-  "employee.read":   "Read",
-  "employee.write":  "Write",
-  "employee.delete": "Delete",
-  "department.read": "Read",
-  "department.write":"Write",
-  "leave.read":      "Read",
-  "leave.approve":   "Approve",
-  "leave.manage":    "Manage",
-  "rbac.manage":     "Manage",
-  "audit_log.read":  "Read",
+  "employee.read":      "Read",
+  "employee.write":     "Write",
+  "employee.delete":    "Delete",
+  "department.read":    "Read",
+  "department.write":   "Write",
+  "leave.read":         "Read",
+  "leave.approve":      "Approve",
+  "leave.manage":       "Manage",
+  "rbac.manage":        "Manage",
+  "audit_log.read":     "Read",
+  "expense.approve":    "Approve",
+  "expense.manage":     "Manage",
+  "payroll.manage":     "Manage",
+  "analytics.read":     "Read",
+  "recruitment.manage": "Manage",
 };
 
 // ── Approval hierarchy data ────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronsLeft, ChevronsRight, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { IconButton } from "@/components/ui/icon-button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,12 +12,8 @@ import { useCurrentUser } from "@/lib/auth/use-current-user";
 
 export function Sidebar() {
   // Desktop (≥1280px) starts expanded; tablet (768–1279px) starts as icon-rail.
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1280);
   const { data: currentUser } = useCurrentUser();
-
-  useEffect(() => {
-    if (window.innerWidth < 1280) setCollapsed(true);
-  }, []);
 
   const visibleLenses = navConfig
     .map((lens) => ({

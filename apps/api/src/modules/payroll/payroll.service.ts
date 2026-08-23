@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { requirePermission } from '../rbac/authorization';
+import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { PayrollConfigUpsertDto } from './dto/payroll-config-upsert.dto';
 import { PayrollSummaryResponseDto } from './dto/payroll-summary-response.dto';
 import { PayslipCreateDto } from './dto/payslip-create.dto';
@@ -41,17 +43,28 @@ export class PayrollService {
     return docs.map(PayslipResponseDto.fromDocument);
   }
 
-  async getPayslip(id: string): Promise<PayslipResponseDto> {
+  async getPayslip(
+    id: string,
+    actor: { tenantId: string; employeeId: string },
+  ): Promise<PayslipResponseDto> {
     const doc = await this.payslipRepo.findById(id);
-    if (!doc) throw new NotFoundException(`Payslip ${id} not found`);
+    if (
+      !doc ||
+      doc.tenantId.toString() !== actor.tenantId ||
+      doc.employeeId.toString() !== actor.employeeId
+    ) {
+      throw new NotFoundException(`Payslip ${id} not found`);
+    }
     return PayslipResponseDto.fromDocument(doc);
   }
 
   async upsertConfig(
     tenantId: string,
     employeeId: string,
+    actorPermissions: ReadonlySet<PermissionCode>,
     dto: PayrollConfigUpsertDto,
   ): Promise<void> {
+    requirePermission(actorPermissions, PermissionCode.PAYROLL_MANAGE);
     await this.configRepo.upsert(tenantId, employeeId, {
       grossSalary: dto.grossSalary,
       currency: dto.currency,
@@ -60,7 +73,12 @@ export class PayrollService {
     });
   }
 
-  async createPayslip(tenantId: string, dto: PayslipCreateDto): Promise<PayslipResponseDto> {
+  async createPayslip(
+    tenantId: string,
+    actorPermissions: ReadonlySet<PermissionCode>,
+    dto: PayslipCreateDto,
+  ): Promise<PayslipResponseDto> {
+    requirePermission(actorPermissions, PermissionCode.PAYROLL_MANAGE);
     const doc = await this.payslipRepo.create(tenantId, {
       employeeId: dto.employeeId,
       month: dto.month,
