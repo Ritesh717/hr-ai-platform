@@ -108,7 +108,7 @@ export function MyTeamScreen() {
         ) : null}
 
         <Card className="flex flex-col gap-4 p-5">
-          <h2 className="text-section-heading">Today's Availability</h2>
+          <h2 className="text-section-heading">{"Today's"} Availability</h2>
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : members.data && availability.data ? (

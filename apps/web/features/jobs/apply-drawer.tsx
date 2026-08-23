@@ -56,7 +56,7 @@ export function ApplyDrawer({ open, onOpenChange, jobTitle }: Props) {
             <CheckCircle2 className="size-12 text-success" />
             <p className="text-lg font-semibold text-text">Application submitted!</p>
             <p className="text-sm text-text-muted">
-              We'll review your application and be in touch within 5 business days.
+              {"We'll"} review your application and be in touch within 5 business days.
             </p>
             <Button intent="secondary" onClick={handleClose}>
               Close

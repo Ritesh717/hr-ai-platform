@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AuthorizationError } from '../../common/errors/app.error';
 import { requirePermission } from '../rbac/authorization';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { PayrollConfigUpsertDto } from './dto/payroll-config-upsert.dto';

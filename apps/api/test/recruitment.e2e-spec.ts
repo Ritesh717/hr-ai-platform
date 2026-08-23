@@ -117,7 +117,7 @@ describe('recruitment API', () => {
     expect(second.status).toBe(409);
   });
 
-  it('GET /applications returns the caller's applications (200)', async () => {
+  it("GET /applications returns the caller's applications (200)", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const job = await seedJob(ctx, tenant._id as Types.ObjectId);
@@ -153,7 +153,7 @@ describe('recruitment API', () => {
     expect(res.body.status).toBe('withdrawn');
   });
 
-  it('GET /interviews returns the caller's upcoming interviews (200)', async () => {
+  it("GET /interviews returns the caller's upcoming interviews (200)", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
 

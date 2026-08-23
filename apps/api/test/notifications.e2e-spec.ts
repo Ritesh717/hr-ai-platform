@@ -47,7 +47,7 @@ describe('notifications API', () => {
     });
   }
 
-  it('GET /notifications returns only the caller's notifications (200)', async () => {
+  it("GET /notifications returns only the caller's notifications (200)", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const other = await employeeUser(ctx, tenant, roles);
@@ -77,7 +77,7 @@ describe('notifications API', () => {
     expect(res.body.read).toBe(true);
   });
 
-  it('PATCH /notifications/:id/read returns 404 for another employee's notification', async () => {
+  it("PATCH /notifications/:id/read returns 404 for another employee's notification", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const other = await employeeUser(ctx, tenant, roles);

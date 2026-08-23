@@ -103,7 +103,7 @@ function ReceiptUploadStep({ onConfirm, onCancel }: ReceiptUploadProps) {
       <div>
         <p className="font-semibold text-text">Upload receipt</p>
         <p className="mt-0.5 text-sm text-text-muted">
-          We'll extract the details automatically. You can review and edit before saving.
+          {"We'll"} extract the details automatically. You can review and edit before saving.
         </p>
       </div>
 

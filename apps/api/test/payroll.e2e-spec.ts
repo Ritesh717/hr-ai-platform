@@ -54,7 +54,7 @@ describe('payroll API', () => {
     });
   }
 
-  it('GET /payroll/payslips returns the authenticated employee's payslips (200)', async () => {
+  it("GET /payroll/payslips returns the authenticated employee's payslips (200)", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     await seedPayslip(ctx, tenant._id as Types.ObjectId, emp._id as Types.ObjectId);
@@ -69,7 +69,7 @@ describe('payroll API', () => {
     expect(res.body[0].grossAmount).toBe(5000);
   });
 
-  it('GET /payroll/payslips does not return another employee's payslips', async () => {
+  it("GET /payroll/payslips does not return another employee's payslips", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const other = await hrAdmin(ctx, tenant, roles);
@@ -98,7 +98,7 @@ describe('payroll API', () => {
     expect(Array.isArray(res.body.breakdown)).toBe(true);
   });
 
-  it('GET /payroll/payslips/:id returns 404 for another employee's payslip', async () => {
+  it("GET /payroll/payslips/:id returns 404 for another employee's payslip", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const other = await hrAdmin(ctx, tenant, roles);

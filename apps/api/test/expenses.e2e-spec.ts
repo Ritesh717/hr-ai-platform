@@ -45,7 +45,7 @@ describe('expenses API', () => {
     expect(res.body.items).toHaveLength(2);
   });
 
-  it('GET /expenses returns only the caller's reports', async () => {
+  it("GET /expenses returns only the caller's reports", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const other = await hrAdmin(ctx, tenant, roles);
