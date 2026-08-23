@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchNotifications } from "@/lib/api/notifications";
+import {
+  dismissNotification,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/api/notifications";
 import type { Notification, NotificationCategory } from "@/lib/api/notifications";
 import { ActionableNotification } from "@/components/patterns/actionable-notification";
 import { PageHeader } from "@/components/layout/page-header";
@@ -67,17 +72,20 @@ export function NotificationsScreen() {
 
   function dismiss(id: string) {
     setLocalState((prev) => ({ ...prev, [id]: "dismissed" }));
+    dismissNotification(id).catch(() => {});
   }
 
   function handleAction(id: string, label: string) {
     setLocalState((prev) => ({ ...prev, [id]: "read" }));
-    toast({ title: `Action: ${label}`, description: "Mocked — would call backend in production.", tone: "success" });
+    markNotificationRead(id).catch(() => {});
+    toast({ title: `Action: ${label}`, tone: "success" });
   }
 
   function markAllRead() {
     const updates: Record<string, "read"> = {};
     notifications.filter((n) => !n.read).forEach((n) => { updates[n.id] = "read"; });
     setLocalState((prev) => ({ ...prev, ...updates }));
+    markAllNotificationsRead().catch(() => {});
   }
 
   const TABS: Array<{ key: Tab; label: string }> = [
