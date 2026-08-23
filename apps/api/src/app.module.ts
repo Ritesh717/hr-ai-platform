@@ -15,6 +15,7 @@ import { EmployeeModule } from './modules/employee/employee.module';
 import { HealthModule } from './modules/health/health.module';
 import { LeaveModule } from './modules/leave/leave.module';
 import { RbacModule } from './modules/rbac/rbac.module';
+import { TimeModule } from './modules/time/time.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
     RbacModule,
     AuditLogModule,
     LeaveModule,
+    TimeModule,
     AgentModule,
   ],
 })
