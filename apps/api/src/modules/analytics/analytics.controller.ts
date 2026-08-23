@@ -15,6 +15,6 @@ export class AnalyticsController {
 
   @Get()
   getAnalytics(@CurrentEmployee() current: CurrentEmployeeType): Promise<AnalyticsResponseDto> {
-    return this.analyticsService.getAnalytics(current.tenantId);
+    return this.analyticsService.getAnalytics(current.tenantId, current.permissions);
   }
 }

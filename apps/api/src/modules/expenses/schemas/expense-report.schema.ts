@@ -45,8 +45,9 @@ export class ExpenseReport {
   @Prop({ required: true })
   title: string;
 
-  @Prop({ required: true })
-  submittedAt: string;
+  /** Set when the report is first submitted; optional on draft creation */
+  @Prop()
+  submittedAt?: string;
 
   @Prop({ type: String, enum: ExpenseStatus, default: ExpenseStatus.DRAFT })
   status: ExpenseStatus;
@@ -76,6 +77,10 @@ export class ExpenseReport {
 
   @Prop()
   notes?: string;
+
+  /** Employee who approved or rejected this report */
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Employee' })
+  approvedById?: Types.ObjectId;
 
   createdAt?: Date;
   updatedAt?: Date;

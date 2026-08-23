@@ -1,16 +1,26 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { EmployeeRepository } from '../employee/employee.repository';
 import { NotificationCategory, NotificationType } from '../notifications/schemas/notification.schema';
 import { NotificationService } from '../notifications/notification.service';
+import { requirePermission } from '../rbac/authorization';
+import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { ExpenseReportCreateDto } from './dto/expense-report-create.dto';
 import { ExpenseReportResponseDto } from './dto/expense-report-response.dto';
 import { ExpenseRepository } from './expense.repository';
 import { ExpenseStatus } from './schemas/expense-report.schema';
 
+interface ActorParams {
+  tenantId: string;
+  employeeId: string;
+  actorPermissions: ReadonlySet<PermissionCode>;
+}
+
 @Injectable()
 export class ExpenseService {
   constructor(
     private readonly repo: ExpenseRepository,
+    private readonly employeeRepo: EmployeeRepository,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -30,25 +40,46 @@ export class ExpenseService {
 
     const doc = await this.repo.create(tenantId, employeeId, {
       title: dto.title,
-      submittedAt: new Date().toISOString(),
+      submittedAt: status === ExpenseStatus.SUBMITTED ? new Date().toISOString() : undefined,
       status,
       total,
       currency: dto.currency,
       items: itemsWithIds as any,
       notes: dto.notes,
     });
+
+    if (status === ExpenseStatus.SUBMITTED) {
+      await this.notifyManagerOnSubmit(tenantId, employeeId, doc.title, doc.currency, total);
+    }
+
     return ExpenseReportResponseDto.fromDocument(doc);
   }
 
-  async approveReport(id: string): Promise<ExpenseReportResponseDto> {
+  async submitReport(id: string, actor: ActorParams): Promise<ExpenseReportResponseDto> {
     const doc = await this.repo.findById(id);
-    if (!doc) throw new NotFoundException(`Expense report ${id} not found`);
+    if (!doc || doc.tenantId.toString() !== actor.tenantId || doc.employeeId.toString() !== actor.employeeId) {
+      throw new NotFoundException(`Expense report ${id} not found`);
+    }
+    if (doc.status !== ExpenseStatus.DRAFT) {
+      throw new BadRequestException('Only draft reports can be submitted');
+    }
+    const updated = await this.repo.submit(id);
+    await this.notifyManagerOnSubmit(actor.tenantId, actor.employeeId, doc.title, doc.currency, doc.total);
+    return ExpenseReportResponseDto.fromDocument(updated!);
+  }
+
+  async approveReport(id: string, actor: ActorParams): Promise<ExpenseReportResponseDto> {
+    requirePermission(actor.actorPermissions, PermissionCode.EXPENSE_APPROVE);
+    const doc = await this.repo.findById(id);
+    if (!doc || doc.tenantId.toString() !== actor.tenantId) {
+      throw new NotFoundException(`Expense report ${id} not found`);
+    }
     if (doc.status !== ExpenseStatus.SUBMITTED) {
       throw new BadRequestException('Only submitted reports can be approved');
     }
-    const updated = await this.repo.updateStatus(id, ExpenseStatus.APPROVED);
+    const updated = await this.repo.updateStatus(id, ExpenseStatus.APPROVED, actor.employeeId);
     void this.notificationService.emit({
-      tenantId: doc.tenantId.toString(),
+      tenantId: actor.tenantId,
       recipientId: doc.employeeId.toString(),
       type: NotificationType.EXPENSE,
       category: NotificationCategory.UPDATE,
@@ -59,15 +90,18 @@ export class ExpenseService {
     return ExpenseReportResponseDto.fromDocument(updated!);
   }
 
-  async rejectReport(id: string): Promise<ExpenseReportResponseDto> {
+  async rejectReport(id: string, actor: ActorParams): Promise<ExpenseReportResponseDto> {
+    requirePermission(actor.actorPermissions, PermissionCode.EXPENSE_APPROVE);
     const doc = await this.repo.findById(id);
-    if (!doc) throw new NotFoundException(`Expense report ${id} not found`);
+    if (!doc || doc.tenantId.toString() !== actor.tenantId) {
+      throw new NotFoundException(`Expense report ${id} not found`);
+    }
     if (doc.status !== ExpenseStatus.SUBMITTED) {
       throw new BadRequestException('Only submitted reports can be rejected');
     }
-    const updated = await this.repo.updateStatus(id, ExpenseStatus.REJECTED);
+    const updated = await this.repo.updateStatus(id, ExpenseStatus.REJECTED, actor.employeeId);
     void this.notificationService.emit({
-      tenantId: doc.tenantId.toString(),
+      tenantId: actor.tenantId,
       recipientId: doc.employeeId.toString(),
       type: NotificationType.EXPENSE,
       category: NotificationCategory.ACTION,
@@ -81,15 +115,32 @@ export class ExpenseService {
   async deleteReport(tenantId: string, employeeId: string, id: string): Promise<void> {
     const doc = await this.repo.findById(id);
     if (!doc) throw new NotFoundException(`Expense report ${id} not found`);
-    if (
-      doc.tenantId.toString() !== tenantId ||
-      doc.employeeId.toString() !== employeeId
-    ) {
+    if (doc.tenantId.toString() !== tenantId || doc.employeeId.toString() !== employeeId) {
       throw new NotFoundException(`Expense report ${id} not found`);
     }
     if (doc.status !== ExpenseStatus.DRAFT) {
       throw new BadRequestException('Only draft reports can be deleted');
     }
     await this.repo.delete(id);
+  }
+
+  private async notifyManagerOnSubmit(
+    tenantId: string,
+    employeeId: string,
+    title: string,
+    currency: string,
+    total: number,
+  ): Promise<void> {
+    const employee = await this.employeeRepo.getById(employeeId, tenantId);
+    if (!employee?.managerId) return;
+    void this.notificationService.emit({
+      tenantId,
+      recipientId: employee.managerId.toString(),
+      type: NotificationType.EXPENSE,
+      category: NotificationCategory.ACTION,
+      title: 'Expense report awaiting approval',
+      body: `${employee.fullName} submitted an expense report: "${title}" (${currency} ${total.toFixed(2)}).`,
+      href: '/expenses',
+    });
   }
 }

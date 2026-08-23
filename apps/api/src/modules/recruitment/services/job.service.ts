@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { requirePermission } from '../../rbac/authorization';
+import { PermissionCode } from '../../rbac/constants/permission-code.enum';
 import { JobCreateDto, JobResponseDto } from '../dto/job.dto';
 import { JobRepository } from '../repositories/job.repository';
 import { JobStatus } from '../schemas/job.schema';
@@ -20,7 +22,12 @@ export class JobService {
     return JobResponseDto.fromDocument(doc);
   }
 
-  async createJob(tenantId: string, dto: JobCreateDto): Promise<JobResponseDto> {
+  async createJob(
+    tenantId: string,
+    dto: JobCreateDto,
+    actorPermissions: ReadonlySet<PermissionCode>,
+  ): Promise<JobResponseDto> {
+    requirePermission(actorPermissions, PermissionCode.RECRUITMENT_MANAGE);
     const doc = await this.repo.create(tenantId, {
       title: dto.title,
       department: dto.department,

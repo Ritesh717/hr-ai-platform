@@ -14,7 +14,7 @@ export class ExpenseItemResponseDto {
 export class ExpenseReportResponseDto {
   id: string;
   title: string;
-  submittedAt: string;
+  submittedAt?: string;
   status: ExpenseStatus;
   total: number;
   currency: string;
