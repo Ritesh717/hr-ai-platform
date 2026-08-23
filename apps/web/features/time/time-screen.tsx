@@ -2,8 +2,11 @@
 
 import { Clock, LogIn, LogOut, Timer } from "lucide-react";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils/cn";
+import { clockIn, clockOut } from "@/lib/api/time";
 import { useClockStatus, useAttendanceMonth, useCurrentWeekTimesheet } from "@/features/time/hooks/use-time-data";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { AttendanceCalendar } from "@/components/patterns/attendance-calendar";
 import { TimesheetGrid } from "@/components/patterns/timesheet-grid";
@@ -28,6 +31,8 @@ export function TimeScreen() {
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentUser();
 
   const { data: clockStatus, isLoading: clockLoading } = useClockStatus();
   const { data: week, isLoading: weekLoading } = useCurrentWeekTimesheet();
@@ -36,14 +41,18 @@ export function TimeScreen() {
   // Initialise local clock state from server data
   const resolvedClocked = clockStatus ? (clockStatus.isClockedIn || isClockedIn) : isClockedIn;
 
-  function toggleClock() {
+  async function toggleClock() {
     if (resolvedClocked) {
       setIsClockedIn(false);
       setClockInTime(null);
+      await clockOut().catch(() => {});
     } else {
+      const now2 = new Date().toISOString();
       setIsClockedIn(true);
-      setClockInTime(new Date().toISOString());
+      setClockInTime(now2);
+      await clockIn().catch(() => {});
     }
+    queryClient.invalidateQueries({ queryKey: ["clock-status", currentUser?.employeeId] });
   }
 
   return (
