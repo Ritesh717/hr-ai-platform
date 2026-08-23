@@ -15,6 +15,7 @@ import { EmployeeModule } from './modules/employee/employee.module';
 import { HealthModule } from './modules/health/health.module';
 import { LeaveModule } from './modules/leave/leave.module';
 import { RbacModule } from './modules/rbac/rbac.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExpenseModule } from './modules/expenses/expense.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
@@ -55,6 +56,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
     PayrollModule,
     ExpenseModule,
     NotificationModule,
+    AnalyticsModule,
     AgentModule,
   ],
 })
