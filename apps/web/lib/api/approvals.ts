@@ -1,5 +1,10 @@
 import { fetchEmployees } from "@/lib/api/employees";
 import { fetchLeaveRequests, updateLeaveStatus } from "@/lib/api/leave";
+import {
+  approveExpenseReport,
+  fetchPendingExpenseApprovals,
+  rejectExpenseReport,
+} from "@/lib/api/expenses";
 import type { LeaveType } from "@/lib/api/types";
 
 export type ApprovalType = "leave" | "expense" | "offboarding" | "role-change";
@@ -24,14 +29,15 @@ function leaveTypeLabel(t: LeaveType): string {
 }
 
 export async function fetchApprovalRequests(): Promise<ApprovalRequest[]> {
-  const [leaveRequests, employees] = await Promise.all([
+  const [leaveRequests, employees, pendingExpenses] = await Promise.all([
     fetchLeaveRequests(),
     fetchEmployees(),
+    fetchPendingExpenseApprovals().catch(() => []),
   ]);
 
   const empMap = new Map(employees.map((e) => [e.id, e]));
 
-  return leaveRequests
+  const leaveApprovals: ApprovalRequest[] = leaveRequests
     .filter((r) => r.status === "pending")
     .map((r) => {
       const emp = empMap.get(r.employeeId);
@@ -48,7 +54,23 @@ export async function fetchApprovalRequests(): Promise<ApprovalRequest[]> {
         urgency: r.type === "sick" && days <= 2 ? "high" : "normal",
       };
     });
+
+  const expenseApprovals: ApprovalRequest[] = pendingExpenses.map((r) => ({
+    id: r.id,
+    type: "expense" as ApprovalType,
+    status: "pending" as ApprovalStatus,
+    requesterName: "Team member",
+    requesterRole: "",
+    summary: `${r.title} · ${r.items.length} item${r.items.length !== 1 ? "s" : ""}`,
+    detail: `Total: ${r.currency} ${r.total.toFixed(2)}`,
+    submittedAt: r.submittedAt ?? new Date().toISOString(),
+    urgency: r.total > 500 ? ("high" as const) : ("normal" as const),
+  }));
+
+  return [...leaveApprovals, ...expenseApprovals];
 }
+
+export { approveExpenseReport, rejectExpenseReport };
 
 export async function approveLeaveRequest(id: string): Promise<void> {
   await updateLeaveStatus(id, "approved");

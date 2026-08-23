@@ -12,7 +12,13 @@ import {
   UserRoundCog,
   X,
 } from "lucide-react";
-import { approveLeaveRequest, fetchApprovalRequests, rejectLeaveRequest } from "@/lib/api/approvals";
+import {
+  approveExpenseReport,
+  approveLeaveRequest,
+  fetchApprovalRequests,
+  rejectExpenseReport,
+  rejectLeaveRequest,
+} from "@/lib/api/approvals";
 import type { ApprovalRequest, ApprovalStatus, ApprovalType } from "@/lib/api/approvals";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { PageHeader } from "@/components/layout/page-header";
@@ -204,6 +210,9 @@ export function ApprovalsScreen() {
     const req = (requests ?? []).find((r) => r.id === id);
     if (req?.type === "leave") {
       const fn = decision === "approved" ? approveLeaveRequest : rejectLeaveRequest;
+      fn(id).catch(() => {});
+    } else if (req?.type === "expense") {
+      const fn = decision === "approved" ? approveExpenseReport : rejectExpenseReport;
       fn(id).catch(() => {});
     }
   }

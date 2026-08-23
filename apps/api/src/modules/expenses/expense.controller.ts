@@ -19,6 +19,11 @@ export class ExpenseController {
     return this.expenseService.getReports(current.tenantId, current.employeeId);
   }
 
+  @Get('pending-approval')
+  getPendingApprovals(@CurrentEmployee() current: CurrentEmployeeType): Promise<ExpenseReportResponseDto[]> {
+    return this.expenseService.getPendingApprovals(current.tenantId, current.employeeId);
+  }
+
   @Post()
   createReport(
     @Body() dto: ExpenseReportCreateDto,

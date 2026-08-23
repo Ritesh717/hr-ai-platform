@@ -11,6 +11,7 @@ import {
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useApprovalRisk,
   useCoveragePreview,
@@ -18,6 +19,8 @@ import {
   useLeaveScreenHistory,
 } from "@/features/leave/hooks/use-leave-data";
 import type { LeaveHistoryEntry, LeaveHistoryStatus, LeaveScreenType } from "@/lib/api/leave-screen";
+import { createLeaveRequest } from "@/lib/api/leave";
+import type { LeaveType } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { ProgressStat } from "@/components/patterns/progress-stat";
@@ -146,8 +149,15 @@ function LeaveHistoryTable({ entries }: { entries: LeaveHistoryEntry[] }) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
+function toApiLeaveType(t: LeaveScreenType): LeaveType {
+  if (t === "Annual") return "vacation";
+  if (t === "Sick") return "sick";
+  return "personal";
+}
+
 export function LeaveScreen() {
   const push = useToast();
+  const queryClient = useQueryClient();
   const { data: balances, isLoading: balancesLoading } = useLeaveScreenBalances();
   const { data: history, isLoading: historyLoading } = useLeaveScreenHistory();
 
@@ -169,10 +179,20 @@ export function LeaveScreen() {
     (leaveType as LeaveScreenType) ?? null,
   );
 
-  async function onSubmit(_values: LeaveFormValues) {
-    await new Promise((r) => setTimeout(r, 400));
-    reset();
-    push({ title: "Leave request submitted", description: "Your manager will review it shortly.", tone: "success" });
+  async function onSubmit(values: LeaveFormValues) {
+    try {
+      await createLeaveRequest({
+        type: toApiLeaveType(values.type),
+        startDate: values.startDate.toISOString().slice(0, 10),
+        endDate: values.endDate.toISOString().slice(0, 10),
+        reason: values.reason || undefined,
+      });
+      reset();
+      void queryClient.invalidateQueries({ queryKey: ["leave-screen-history"] });
+      push({ title: "Leave request submitted", description: "Your manager will review it shortly.", tone: "success" });
+    } catch {
+      push({ title: "Failed to submit leave request", description: "Please try again.", tone: "error" });
+    }
   }
 
   return (

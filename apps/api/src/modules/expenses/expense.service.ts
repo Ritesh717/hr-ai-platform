@@ -112,6 +112,13 @@ export class ExpenseService {
     return ExpenseReportResponseDto.fromDocument(updated!);
   }
 
+  async getPendingApprovals(tenantId: string, managerId: string): Promise<ExpenseReportResponseDto[]> {
+    const directReports = await this.employeeRepo.findByManagerId(managerId, tenantId);
+    const ids = directReports.map((e) => e._id.toString());
+    const docs = await this.repo.findSubmittedForManager(tenantId, ids);
+    return docs.map(ExpenseReportResponseDto.fromDocument);
+  }
+
   async deleteReport(tenantId: string, employeeId: string, id: string): Promise<void> {
     const doc = await this.repo.findById(id);
     if (!doc) throw new NotFoundException(`Expense report ${id} not found`);

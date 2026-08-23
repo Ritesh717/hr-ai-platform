@@ -52,6 +52,20 @@ export class ExpenseRepository {
     return this.model.findByIdAndUpdate(id, { $set: update }, { new: true });
   }
 
+  async findSubmittedForManager(
+    tenantId: string,
+    managerEmployeeIds: string[],
+  ): Promise<ExpenseReportDocument[]> {
+    if (managerEmployeeIds.length === 0) return [];
+    return this.model
+      .find({
+        tenantId: new Types.ObjectId(tenantId),
+        employeeId: { $in: managerEmployeeIds.map((id) => new Types.ObjectId(id)) },
+        status: ExpenseStatus.SUBMITTED,
+      })
+      .sort({ submittedAt: -1 });
+  }
+
   async delete(id: string): Promise<void> {
     await this.model.findByIdAndDelete(id);
   }

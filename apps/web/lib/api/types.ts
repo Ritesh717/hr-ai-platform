@@ -38,7 +38,12 @@ export type PermissionCode =
   | "rbac.manage"
   | "leave.read"
   | "leave.approve"
-  | "leave.manage";
+  | "leave.manage"
+  | "expense.approve"
+  | "expense.manage"
+  | "payroll.manage"
+  | "analytics.read"
+  | "recruitment.manage";
 
 /** Mirrors apps/api/src/modules/auth/dto/me-response.dto.ts. */
 export interface Me {
