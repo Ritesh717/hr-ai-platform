@@ -12,7 +12,7 @@ import {
   UserRoundCog,
   X,
 } from "lucide-react";
-import { fetchApprovalRequests } from "@/lib/api/approvals";
+import { approveLeaveRequest, fetchApprovalRequests, rejectLeaveRequest } from "@/lib/api/approvals";
 import type { ApprovalRequest, ApprovalStatus, ApprovalType } from "@/lib/api/approvals";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { PageHeader } from "@/components/layout/page-header";
@@ -201,6 +201,11 @@ export function ApprovalsScreen() {
       next.delete(id);
       return next;
     });
+    const req = (requests ?? []).find((r) => r.id === id);
+    if (req?.type === "leave") {
+      const fn = decision === "approved" ? approveLeaveRequest : rejectLeaveRequest;
+      fn(id).catch(() => {});
+    }
   }
 
   function toggleSelect(id: string) {
