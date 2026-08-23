@@ -5,10 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, LayoutGrid, List, Mail, MessageSquare, Phone } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import {
-  DIRECTORY_DEPARTMENTS,
-  DIRECTORY_LOCATIONS,
-  DIRECTORY_ROLES,
-  DIRECTORY_SKILLS,
   fetchDirectoryEmployees,
   type DirectoryEmployee,
 } from "@/lib/api/directory";
@@ -19,13 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const FACETS = [
-  { key: "department", label: "Department", options: DIRECTORY_DEPARTMENTS },
-  { key: "role",       label: "Role",       options: DIRECTORY_ROLES },
-  { key: "location",   label: "Location",   options: DIRECTORY_LOCATIONS },
-  { key: "skills",     label: "Skills",     options: DIRECTORY_SKILLS, multiSelect: true },
-];
 
 const MAX_SKILLS = 3;
 
@@ -141,6 +130,16 @@ export function DirectoryScreen() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const facets = useMemo(() => {
+    if (!data) return [];
+    const uniq = <T,>(arr: T[]) => [...new Set(arr)].sort() as T[];
+    return [
+      { key: "department", label: "Department", options: uniq(data.map((e) => e.department).filter(Boolean)) },
+      { key: "role",       label: "Role",       options: uniq(data.map((e) => e.role).filter(Boolean)) },
+      { key: "location",   label: "Location",   options: uniq(data.map((e) => e.location).filter(Boolean)) },
+    ];
+  }, [data]);
+
   function handleViewChange(v: "grid" | "list") {
     setView(v);
     try { localStorage.setItem("directory-view-mode", v); } catch { /* ignore */ }
@@ -173,7 +172,7 @@ export function DirectoryScreen() {
     <div className="flex flex-col gap-5">
       {/* Faceted search */}
       <FacetedSearch
-        facets={FACETS}
+        facets={facets}
         onFilter={setFilters}
         placeholder="Search by name, role, or department…"
       />

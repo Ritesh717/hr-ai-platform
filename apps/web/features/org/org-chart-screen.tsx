@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DEPARTMENTS, fetchOrgNodes } from "@/lib/api/org";
+import { fetchOrgNodes } from "@/lib/api/org";
 import { InteractiveOrgChart } from "@/components/patterns/interactive-org-chart";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,11 @@ export function OrgChartScreen() {
     queryFn: fetchOrgNodes,
     staleTime: 10 * 60 * 1000,
   });
+
+  const departments = useMemo(() => {
+    if (!data) return [];
+    return [...new Set(data.map((n) => n.department).filter(Boolean))].sort();
+  }, [data]);
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -38,7 +43,7 @@ export function OrgChartScreen() {
           >
             All
           </Button>
-          {DEPARTMENTS.map((dept) => (
+          {departments.map((dept) => (
             <Button
               key={dept}
               intent={deptFilter === dept ? "primary" : "secondary"}
