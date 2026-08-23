@@ -1,5 +1,3 @@
-import { apiFetch } from "./client";
-
 export interface MonthPoint {
   month: string;
   value: number;
@@ -15,15 +13,11 @@ export interface RatingPoint {
   count: number;
 }
 
-export interface AnalyticsData {
+export class AnalyticsResponseDto {
   headcount: MonthPoint[];
   attrition: MonthPoint[];
   timeToHire: DeptPoint[];
   leaveUtilization: MonthPoint[];
   payrollSpend: MonthPoint[];
   performanceDist: RatingPoint[];
-}
-
-export async function fetchAnalytics(): Promise<AnalyticsData> {
-  return apiFetch<AnalyticsData>("/api/v1/analytics");
 }
