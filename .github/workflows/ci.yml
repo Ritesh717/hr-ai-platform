@@ -37,6 +37,8 @@ jobs:
       - name: E2E tests
         # mongodb-memory-server downloads and runs its own mongod (replica-set mode) per test
         # file — no external `mongo` service container needed in CI.
+        env:
+          MONGOMS_VERSION: "7.0.14"
         run: npm run test:e2e
 
   test-web:

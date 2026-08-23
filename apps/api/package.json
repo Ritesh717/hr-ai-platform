@@ -97,5 +97,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage"
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "version": "7.0.14"
+    }
   }
 }
