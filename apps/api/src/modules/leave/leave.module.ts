@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EmployeeModule } from '../employee/employee.module';
+import { NotificationModule } from '../notifications/notification.module';
 import { HolidayController } from './holiday.controller';
 import { HolidayRepository } from './holiday.repository';
 import { LeaveController } from './leave.controller';
@@ -15,10 +16,8 @@ import { LeaveRequest, LeaveRequestSchema } from './schemas/leave-request.schema
       { name: LeaveRequest.name, schema: LeaveRequestSchema },
       { name: Holiday.name, schema: HolidaySchema },
     ]),
-    // EmployeeRepository (exported by EmployeeModule) is needed by LeaveService.getTeamLeave()
-    // to resolve a manager's direct reports — using the proper module abstraction rather than
-    // directly injecting the Employee model.
     EmployeeModule,
+    NotificationModule,
   ],
   controllers: [LeaveController, HolidayController],
   providers: [LeaveRequestRepository, HolidayRepository, LeaveService],

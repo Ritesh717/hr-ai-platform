@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { NotificationCategory, NotificationType } from '../notifications/schemas/notification.schema';
+import { NotificationService } from '../notifications/notification.service';
 import { ExpenseReportCreateDto } from './dto/expense-report-create.dto';
 import { ExpenseReportResponseDto } from './dto/expense-report-response.dto';
 import { ExpenseRepository } from './expense.repository';
@@ -7,7 +9,10 @@ import { ExpenseStatus } from './schemas/expense-report.schema';
 
 @Injectable()
 export class ExpenseService {
-  constructor(private readonly repo: ExpenseRepository) {}
+  constructor(
+    private readonly repo: ExpenseRepository,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async getReports(tenantId: string, employeeId: string): Promise<ExpenseReportResponseDto[]> {
     const docs = await this.repo.findByEmployee(tenantId, employeeId);
@@ -42,6 +47,15 @@ export class ExpenseService {
       throw new BadRequestException('Only submitted reports can be approved');
     }
     const updated = await this.repo.updateStatus(id, ExpenseStatus.APPROVED);
+    void this.notificationService.emit({
+      tenantId: doc.tenantId.toString(),
+      recipientId: doc.employeeId.toString(),
+      type: NotificationType.EXPENSE,
+      category: NotificationCategory.UPDATE,
+      title: 'Expense report approved',
+      body: `Your expense report "${doc.title}" (${doc.currency} ${doc.total.toFixed(2)}) has been approved.`,
+      href: '/expenses',
+    });
     return ExpenseReportResponseDto.fromDocument(updated!);
   }
 
@@ -52,6 +66,15 @@ export class ExpenseService {
       throw new BadRequestException('Only submitted reports can be rejected');
     }
     const updated = await this.repo.updateStatus(id, ExpenseStatus.REJECTED);
+    void this.notificationService.emit({
+      tenantId: doc.tenantId.toString(),
+      recipientId: doc.employeeId.toString(),
+      type: NotificationType.EXPENSE,
+      category: NotificationCategory.ACTION,
+      title: 'Expense report rejected',
+      body: `Your expense report "${doc.title}" (${doc.currency} ${doc.total.toFixed(2)}) has been rejected.`,
+      href: '/expenses',
+    });
     return ExpenseReportResponseDto.fromDocument(updated!);
   }
 
