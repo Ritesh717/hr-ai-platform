@@ -69,7 +69,9 @@ describe('recruitment API', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(job._id.toString());
-    expect(Array.isArray(res.body.skillsMatch)).toBe(true);
+    // JobResponseDto has a numeric matchScore (Stage 9 agent will compute it), not a
+    // skillsMatch array — see dto/job.dto.ts.
+    expect(typeof res.body.matchScore).toBe('number');
   });
 
   it('GET /jobs/:id returns 404 for unknown job (404)', async () => {
@@ -135,7 +137,7 @@ describe('recruitment API', () => {
     expect(res.body).toHaveLength(1);
   });
 
-  it('PATCH /applications/:id/withdraw withdraws an active application (200)', async () => {
+  it('PATCH /applications/:id/withdraw withdraws an active application (204)', async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const job = await seedJob(ctx, tenant._id as Types.ObjectId);
@@ -149,17 +151,29 @@ describe('recruitment API', () => {
       .patch(`/api/v1/applications/${apply.body.id}/withdraw`)
       .set(authHeaders(ctx, emp));
 
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('withdrawn');
+    // @HttpCode(204) — see application.controller.ts.
+    expect(res.status).toBe(204);
+
+    const list = await request(ctx.app.getHttpServer())
+      .get('/api/v1/applications')
+      .set(authHeaders(ctx, emp));
+    expect(list.body[0].status).toBe('withdrawn');
   });
 
   it("GET /interviews returns the caller's upcoming interviews (200)", async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
+    const job = await seedJob(ctx, tenant._id as Types.ObjectId);
+
+    const apply = await request(ctx.app.getHttpServer())
+      .post(`/api/v1/jobs/${job._id.toString()}/apply`)
+      .set(authHeaders(ctx, emp))
+      .send({});
 
     const model = ctx.app.get(getModelToken('Interview'));
     await model.create({
       tenantId: tenant._id,
+      applicationId: apply.body.id,
       candidateId: emp._id,
       jobTitle: 'Software Engineer',
       department: 'Engineering',

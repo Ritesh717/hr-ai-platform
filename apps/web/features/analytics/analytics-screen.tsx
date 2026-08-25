@@ -73,7 +73,7 @@ export function AnalyticsScreen() {
           description="Workforce insights across all domains"
           actions={
             <Button asChild>
-              <Link href="/chat">
+              <Link href="/assistant">
                 <Sparkles className="mr-1.5 size-4" />
                 Ask Analytics
               </Link>

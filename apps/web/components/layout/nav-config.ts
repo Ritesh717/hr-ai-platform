@@ -59,7 +59,7 @@ export const navConfig: NavLens[] = [
       { href: "/applications", label: "Applications",  icon: FileText },
       { href: "/interviews",     label: "Interviews",     icon: Video },
       { href: "/notifications",  label: "Notifications",  icon: Bell },
-      { href: "/chat",           label: "AI Assistant",   icon: Sparkles },
+      { href: "/assistant",      label: "AI Assistant",   icon: Sparkles },
     ],
   },
   {

@@ -98,16 +98,20 @@ export async function createEmployee(
   });
 }
 
+// Each call defaults to a fresh unique email (createEmployee's own default) rather than a fixed
+// one — callers that invoke the same helper more than once within a tenant (e.g. two
+// employeeUser() calls to test a headcount of N) would otherwise collide on the
+// uq_employee_tenant_email index. Pass `overrides.email` for tests that need a known address.
 export function hrAdmin(ctx: TestContext, tenant: TenantDocument, roles: Record<RoleName, RoleDocument>, overrides = {}) {
-  return createEmployee(ctx, tenant, roles[RoleName.HR_ADMIN], { email: 'hr-admin@example.com', ...overrides });
+  return createEmployee(ctx, tenant, roles[RoleName.HR_ADMIN], overrides);
 }
 
 export function manager(ctx: TestContext, tenant: TenantDocument, roles: Record<RoleName, RoleDocument>, overrides = {}) {
-  return createEmployee(ctx, tenant, roles[RoleName.MANAGER], { email: 'manager@example.com', ...overrides });
+  return createEmployee(ctx, tenant, roles[RoleName.MANAGER], overrides);
 }
 
 export function employeeUser(ctx: TestContext, tenant: TenantDocument, roles: Record<RoleName, RoleDocument>, overrides = {}) {
-  return createEmployee(ctx, tenant, roles[RoleName.EMPLOYEE], { email: 'employee@example.com', ...overrides });
+  return createEmployee(ctx, tenant, roles[RoleName.EMPLOYEE], overrides);
 }
 
 export function authHeaders(ctx: TestContext, actor: EmployeeDocument): Record<string, string> {

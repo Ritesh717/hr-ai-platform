@@ -22,6 +22,6 @@ test.describe("Career Growth — employee", () => {
   test("CAR-04 'Talk to your manager' navigates to chat", async ({ page }) => {
     await page.goto("/careers");
     await page.getByRole("link", { name: "Talk to your manager" }).click();
-    await expect(page).toHaveURL(/\/chat$/);
+    await expect(page).toHaveURL(/\/assistant$/);
   });
 });

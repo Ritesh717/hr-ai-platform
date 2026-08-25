@@ -64,7 +64,7 @@ const MOCK_INSIGHTS: Record<InsightContext, InsightContent> = {
   },
   analytics: {
     summary: "Attrition rate dropped 1.1 pp this quarter — Engineering leads the improvement. Time-to-hire is up 3 days in Product; consider widening sourcing channels.",
-    actions: [{ label: "Ask Analytics", href: "/chat" }],
+    actions: [{ label: "Ask Analytics", href: "/assistant" }],
   },
 };
 

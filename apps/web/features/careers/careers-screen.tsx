@@ -22,7 +22,7 @@ function ActionChips() {
         </Link>
       </Button>
       <Button asChild intent="secondary" size="sm">
-        <Link href="/chat">
+        <Link href="/assistant">
           <MessageSquare className="size-3.5" />
           Talk to your manager
         </Link>

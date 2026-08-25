@@ -20,6 +20,18 @@ export class ApplicationRepository {
     return this.model.findById(id);
   }
 
+  async findByJobAndEmployee(
+    tenantId: string,
+    jobId: string,
+    employeeId: string,
+  ): Promise<ApplicationDocument | null> {
+    return this.model.findOne({
+      tenantId: new Types.ObjectId(tenantId),
+      jobId: new Types.ObjectId(jobId),
+      employeeId: new Types.ObjectId(employeeId),
+    });
+  }
+
   async create(
     tenantId: string,
     data: Omit<Application, 'tenantId' | 'jobId' | 'employeeId'> & { jobId: string; employeeId: string },

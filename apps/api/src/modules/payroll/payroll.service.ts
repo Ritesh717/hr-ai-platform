@@ -25,7 +25,10 @@ export class PayrollService {
     );
 
     const grossSalary = config?.grossSalary ?? 0;
-    const netSalary = latest ? (latest.netAmount / latest.grossAmount) * grossSalary : grossSalary * 0.71;
+    // The latest payslip's own net amount is the caller's actual latest net pay — scaling it by
+    // the config's current annual grossSalary silently drifted from reality whenever the two
+    // diverged (e.g. after a raise the config wasn't retroactively applied to old payslips).
+    const netSalary = latest ? latest.netAmount : grossSalary * 0.71;
 
     return {
       grossSalary,
