@@ -102,10 +102,24 @@ export function EmployeeDetailScreen({ id }: { id: string }) {
               defaultValues={formValues}
               onCancel={() => setEditing(false)}
               onSubmit={async (values) => {
-                await updateEmployee.mutateAsync({
-                  ...values,
-                  departmentId: values.departmentId === NO_DEPARTMENT ? "" : values.departmentId,
-                });
+                // Only send fields that actually changed. A self-service edit (e.g. jobTitle)
+                // must not also re-send unrelated fields like `status` — the backend rejects
+                // the whole request the moment a privileged field is present in the payload,
+                // even when its value is unchanged, so an always-send-everything patch made
+                // self-editing impossible for anyone without employee.write.
+                const patch: Record<string, unknown> = {};
+                for (const key of Object.keys(formValues) as (keyof typeof formValues)[]) {
+                  const before = formValues[key];
+                  const after = values[key];
+                  const changed =
+                    before instanceof Date || after instanceof Date
+                      ? new Date(before as Date | string).getTime() !== new Date(after as Date | string).getTime()
+                      : before !== after;
+                  if (!changed) continue;
+                  patch[key] = key === "departmentId" && after === NO_DEPARTMENT ? "" : after;
+                }
+
+                await updateEmployee.mutateAsync(patch);
                 push({ title: "Profile updated", tone: "success" });
                 setEditing(false);
               }}

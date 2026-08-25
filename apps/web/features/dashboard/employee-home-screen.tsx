@@ -123,7 +123,7 @@ export function EmployeeHomeScreen() {
                   <span>Last pay: {formatDate(data.payroll.lastPayDate)}</span>
                 </div>
                 <Button intent="secondary" size="sm" asChild className="self-start">
-                  <Link href="/payslips">View payslips</Link>
+                  <Link href="/payroll">View payslips</Link>
                 </Button>
               </>
             ) : null}

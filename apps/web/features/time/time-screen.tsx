@@ -85,7 +85,7 @@ export function TimeScreen() {
               <Clock className="size-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-text">
+              <div className="text-sm font-semibold text-text">
                 {clockLoading ? (
                   <Skeleton className="h-4 w-24" />
                 ) : resolvedClocked ? (
@@ -93,7 +93,7 @@ export function TimeScreen() {
                 ) : (
                   "Not clocked in"
                 )}
-              </p>
+              </div>
               <p className="text-xs text-text-muted">
                 {resolvedClocked && clockInTime
                   ? `Since ${formatTime(clockInTime)}`

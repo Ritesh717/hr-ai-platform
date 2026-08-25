@@ -2,11 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
-import { getToken } from "@/lib/auth/token";
+import { decodeToken } from "@/lib/auth/jwt";
+import { clearToken, getToken } from "@/lib/auth/token";
 
 function subscribe(onChange: () => void): () => void {
   window.addEventListener("storage", onChange);
   return () => window.removeEventListener("storage", onChange);
+}
+
+// A token can be present but undecodable (corrupted localStorage, a stale/garbage value). Without
+// this check, useCurrentUser's query stays permanently disabled (claims is null) and the
+// dashboard layout shows its loading skeleton forever instead of ever redirecting to /login.
+function hasValidToken(): boolean {
+  const token = getToken();
+  return Boolean(token) && decodeToken(token!) !== null;
 }
 
 /**
@@ -24,7 +33,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const hasToken = useSyncExternalStore(
     subscribe,
-    () => Boolean(getToken()),
+    hasValidToken,
     () => false,
   );
 
@@ -35,7 +44,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     // useSyncExternalStore's post-hydration correction lands, and this effect
     // can fire on that transient render — redirecting a signed-in user back
     // to /login. Reading localStorage directly here is immune to that race.
-    if (!getToken()) router.replace("/login");
+    const token = getToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    if (decodeToken(token) === null) {
+      clearToken();
+      router.replace("/login");
+    }
   }, [hasToken, router]);
 
   if (!hasToken) return null;

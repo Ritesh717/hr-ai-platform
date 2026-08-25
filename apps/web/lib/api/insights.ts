@@ -34,7 +34,7 @@ const MOCK_INSIGHTS: Record<InsightContext, InsightContent> = {
   },
   payroll: {
     summary: "Next payroll run is in 8 days. No discrepancies detected in your department's data.",
-    actions: [{ label: "View payslips", href: "/payslips" }],
+    actions: [{ label: "View payslips", href: "/payroll" }],
   },
   payslip: {
     summary: "Your gross pay increased 4.2% compared to the same period last year, reflecting your recent promotion.",

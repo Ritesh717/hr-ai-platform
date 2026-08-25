@@ -74,7 +74,32 @@ export function InteractiveOrgChart({ nodes, search, deptFilter }: Props) {
 
   const nodeMap    = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const childrenMap = useMemo(() => buildChildrenMap(nodes), [nodes]);
-  const rootId     = useMemo(() => nodes.find((n) => !n.managerId)?.id ?? "", [nodes]);
+  // More than one employee can legitimately have no manager (a brand-new hire before their
+  // manager is assigned, a contractor, etc.) — picking the first one in array order silently
+  // hides the real org tree behind whichever manager-less record happens to sort first. The
+  // real root is the manager-less node with the most total reports.
+  const rootId = useMemo(() => {
+    const managerless = nodes.filter((n) => !n.managerId);
+    if (managerless.length <= 1) return managerless[0]?.id ?? "";
+
+    function countDescendants(id: string, seen: Set<string>): number {
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      const children = childrenMap.get(id) ?? [];
+      return children.length + children.reduce((sum, c) => sum + countDescendants(c, seen), 0);
+    }
+
+    let best = managerless[0];
+    let bestCount = -1;
+    for (const candidate of managerless) {
+      const count = countDescendants(candidate.id, new Set());
+      if (count > bestCount) {
+        bestCount = count;
+        best = candidate;
+      }
+    }
+    return best.id;
+  }, [nodes, childrenMap]);
 
   const positions = useMemo(() => {
     const out = new Map<string, Pos>();

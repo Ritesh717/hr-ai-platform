@@ -277,6 +277,7 @@ export function LeaveScreen() {
                   value={endDate ?? null}
                   onChange={(d) => setValue("endDate", d!, { shouldValidate: true })}
                   placeholder="To"
+                  disabled={startDate ? { before: startDate } : undefined}
                 />
                 {errors.endDate && <p className="text-xs text-danger">{errors.endDate.message}</p>}
               </div>
