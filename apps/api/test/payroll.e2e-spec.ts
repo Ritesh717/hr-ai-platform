@@ -211,5 +211,17 @@ describe('payroll API', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('rejects a malformed employeeId (422) rather than erroring', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const admin = await hrAdmin(ctx, tenant, roles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, admin))
+        .send(configBody('not-a-valid-object-id'));
+
+      expect(res.status).toBe(422);
+    });
   });
 });
