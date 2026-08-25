@@ -2,6 +2,10 @@ import { IsEnum, IsNumber, IsString, Length, Min } from 'class-validator';
 import { EmploymentType } from '../schemas/payroll-config.schema';
 
 export class PayrollConfigUpsertDto {
+  /** Target employee whose payroll config is being set — always the caller's choice, never inferred from the caller. */
+  @IsString()
+  employeeId: string;
+
   @IsNumber()
   @Min(0)
   grossSalary: number;

@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../../common/errors/app.error';
+import { EmployeeRepository } from '../employee/employee.repository';
 import { requirePermission } from '../rbac/authorization';
 import { PermissionCode } from '../rbac/constants/permission-code.enum';
 import { PayrollConfigUpsertDto } from './dto/payroll-config-upsert.dto';
@@ -13,6 +15,7 @@ export class PayrollService {
   constructor(
     private readonly configRepo: PayrollConfigRepository,
     private readonly payslipRepo: PayslipRepository,
+    private readonly employeeRepository: EmployeeRepository,
   ) {}
 
   async getSummary(tenantId: string, employeeId: string): Promise<PayrollSummaryResponseDto> {
@@ -63,12 +66,17 @@ export class PayrollService {
 
   async upsertConfig(
     tenantId: string,
-    employeeId: string,
     actorPermissions: ReadonlySet<PermissionCode>,
     dto: PayrollConfigUpsertDto,
   ): Promise<void> {
+    // PAYROLL_MANAGE is checked before the target lookup so a caller without it always gets a
+    // 403, regardless of whether dto.employeeId happens to exist — never leaks target existence
+    // to an unauthorized caller.
     requirePermission(actorPermissions, PermissionCode.PAYROLL_MANAGE);
-    await this.configRepo.upsert(tenantId, employeeId, {
+    const target = await this.employeeRepository.getById(dto.employeeId, tenantId);
+    if (!target) throw new NotFoundError(`Employee ${dto.employeeId} not found`);
+
+    await this.configRepo.upsert(tenantId, dto.employeeId, {
       grossSalary: dto.grossSalary,
       currency: dto.currency,
       employmentType: dto.employmentType,
