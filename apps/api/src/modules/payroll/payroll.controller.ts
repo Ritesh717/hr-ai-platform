@@ -37,18 +37,13 @@ export class PayrollController {
     });
   }
 
-  /** HR/admin: set or update an employee's payroll configuration */
+  /** HR/admin: set or update the target employee's (dto.employeeId) payroll configuration */
   @Put('config')
   upsertConfig(
     @Body() dto: PayrollConfigUpsertDto,
     @CurrentEmployee() current: CurrentEmployeeType,
   ): Promise<void> {
-    return this.payrollService.upsertConfig(
-      current.tenantId,
-      current.employeeId,
-      current.permissions,
-      dto,
-    );
+    return this.payrollService.upsertConfig(current.tenantId, current.permissions, dto);
   }
 
   /** HR/admin: issue a payslip for an employee */

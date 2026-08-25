@@ -133,4 +133,95 @@ describe('payroll API', () => {
     const res = await request(ctx.app.getHttpServer()).get('/api/v1/payroll/summary');
     expect(res.status).toBe(401);
   });
+
+  describe('PUT /payroll/config', () => {
+    function configBody(employeeId: string, overrides: Partial<Record<string, unknown>> = {}) {
+      return {
+        employeeId,
+        grossSalary: 65000,
+        currency: 'GBP',
+        employmentType: 'Full-time',
+        nextPayDate: '2026-09-01',
+        ...overrides,
+      };
+    }
+
+    it('an HR admin can set another employee\'s payroll config (200), not just their own', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const admin = await hrAdmin(ctx, tenant, roles);
+      const target = await employeeUser(ctx, tenant, roles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, admin))
+        .send(configBody(target._id.toString()));
+
+      expect(res.status).toBe(200);
+
+      // Verify it was the target's config that was written, not the admin's own.
+      const targetSummary = await request(ctx.app.getHttpServer())
+        .get('/api/v1/payroll/summary')
+        .set(authHeaders(ctx, target));
+      expect(targetSummary.body.grossSalary).toBe(65000);
+
+      const adminSummary = await request(ctx.app.getHttpServer())
+        .get('/api/v1/payroll/summary')
+        .set(authHeaders(ctx, admin));
+      expect(adminSummary.body.grossSalary).toBe(0);
+    });
+
+    it('a caller without PAYROLL_MANAGE gets 403', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const emp = await employeeUser(ctx, tenant, roles);
+      const target = await employeeUser(ctx, tenant, roles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, emp))
+        .send(configBody(target._id.toString()));
+
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects a target employeeId from another tenant (404)', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const admin = await hrAdmin(ctx, tenant, roles);
+
+      const { tenant: otherTenant, roles: otherRoles } = await createTenantWithRoles(ctx, {
+        name: 'Other Corp',
+      });
+      const otherTenantEmployee = await employeeUser(ctx, otherTenant, otherRoles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, admin))
+        .send(configBody(otherTenantEmployee._id.toString()));
+
+      expect(res.status).toBe(404);
+    });
+
+    it('rejects an unknown employeeId (404)', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const admin = await hrAdmin(ctx, tenant, roles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, admin))
+        .send(configBody(new Types.ObjectId().toString()));
+
+      expect(res.status).toBe(404);
+    });
+
+    it('rejects a malformed employeeId (422) rather than erroring', async () => {
+      const { tenant, roles } = await createTenantWithRoles(ctx);
+      const admin = await hrAdmin(ctx, tenant, roles);
+
+      const res = await request(ctx.app.getHttpServer())
+        .put('/api/v1/payroll/config')
+        .set(authHeaders(ctx, admin))
+        .send(configBody('not-a-valid-object-id'));
+
+      expect(res.status).toBe(422);
+    });
+  });
 });
