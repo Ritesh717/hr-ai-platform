@@ -277,12 +277,24 @@ Re-verified after the `apps/api-node` → `apps/api` rename and the Python backe
         proving cross-employee/cross-permission rejection matches REST exactly) — 9/9 new e2e
         cases pass alongside the existing 39.
 - [x] Story #3 — Leave & payroll read tools: `get_leave_balance`, `get_pending_requests`,
-      `get_payslip` (stub — no payroll module yet, returns `{status:'unavailable'}` with no salary
-      data; documented in the tool and guarded by `payslip-no-raw-data-leak.json` eval case).
-      `LeaveService` injected into `EmployeeAgentService`; `LeaveModule` added to `AgentModule`
-      imports. Tests: 6 new unit cases in `tools/employee-agent.tools.spec.ts`; 7 new e2e cases
-      in `test/agent-tools.e2e-spec.ts` (self-access, LEAVE_READ gate, pending-only filter,
-      payslip stub, no raw salary fields).
+      `get_payslip` (originally shipped as a stub — no payroll module existed yet, returned
+      `{status:'unavailable'}` with no salary data). `LeaveService` injected into
+      `EmployeeAgentService`; `LeaveModule` added to `AgentModule` imports. Tests: 6 new unit
+      cases in `tools/employee-agent.tools.spec.ts`; 7 new e2e cases in
+      `test/agent-tools.e2e-spec.ts` (self-access, LEAVE_READ gate, pending-only filter, payslip
+      stub, no raw salary fields).
+      **Fixed by issue #184** (found via `docs/module-analysis-2026-08-25.md` §4): `PayrollModule`
+      shipped later in the Stage 2 close-gaps pass but `get_payslip` was never updated to call it.
+      Now injects the real `PayrollService`, filters the caller's own payslips (via
+      `PayrollService.getPayslips()`) down to the requested month/year the same way
+      `get_pending_requests` filters `listRequests()` — no `employeeId` input exists on this tool
+      at all, so it can only ever resolve the caller's own payslip. Reuses `PayslipResponseDto`
+      verbatim per the issue's security note (same shape the REST `/payroll/payslips` endpoint
+      already returns to that employee). System prompt bumped to `prompts/employee-agent/v3.md`
+      (`AGENT_PROMPT_VERSION` default now `v3`) describing all six tools accurately — `v2.md` had
+      also gone stale for `get_leave_balance`/`get_pending_requests` (added in the same commit
+      that introduced those two tools, story #3, without a prompt bump); `v3.md` corrects that too
+      while it's already being touched.
 - [x] Story #4 — Authentication propagation: JWT→`AgentToolContext` wiring confirmed implemented
       in Story #1/#2 (controller uses `@UseGuards(JwtAuthGuard)` + `@CurrentEmployee()`).
       Added `test/agent-chat.e2e-spec.ts` with explicit HTTP-level coverage: 401 with no

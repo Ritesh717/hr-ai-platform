@@ -6,6 +6,7 @@ import { AppConfig } from '../../config/configuration';
 import { DepartmentService } from '../department/department.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LeaveService } from '../leave/leave.service';
+import { PayrollService } from '../payroll/payroll.service';
 import { AgentModelConfig, resolveAgentModel } from './model/agent-model.provider';
 import { EmployeeAgentPromptService } from './prompt.service';
 import { AnyAgentToolDefinition, buildToolSet } from './tools/agent-tool';
@@ -71,8 +72,9 @@ export class EmployeeAgentService {
     employeeService: EmployeeService,
     departmentService: DepartmentService,
     leaveService: LeaveService,
+    payrollService: PayrollService,
   ) {
-    this.tools = buildEmployeeAgentTools({ employeeService, departmentService, leaveService });
+    this.tools = buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService });
   }
 
   async chat(params: EmployeeAgentChatParams): Promise<EmployeeAgentChatResult> {

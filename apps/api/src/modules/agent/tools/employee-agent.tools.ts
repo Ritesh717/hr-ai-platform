@@ -6,29 +6,32 @@ import { EmployeeService } from '../../employee/employee.service';
 import { LeaveRequestResponseDto } from '../../leave/dto/leave-request-response.dto';
 import { LeaveService } from '../../leave/leave.service';
 import { LeaveStatus } from '../../leave/schemas/leave-request.schema';
+import { PayrollService } from '../../payroll/payroll.service';
 import { PermissionCode } from '../../rbac/constants/permission-code.enum';
 import { AnyAgentToolDefinition, defineAgentTool } from './agent-tool';
 
-// Stories #2 and #3 (Stage 2 — Employee/org + leave/payroll read tools). Six read-only tools
-// wired to existing domain services — no repository/DB access here (CLAUDE.md rule 1), no tool
-// decides authorization itself (CLAUDE.md rule 2/3): each handler calls the same domain-service
-// method a controller would.
+// Stories #2 and #3 (Stage 2 — Employee/org + leave/payroll read tools), get_payslip fixed to a
+// real implementation by issue #184. Six read-only tools wired to existing domain services — no
+// repository/DB access here (CLAUDE.md rule 1), no tool decides authorization itself (CLAUDE.md
+// rule 2/3): each handler calls the same domain-service method a controller would.
 //
 // Tool results use the same *Response DTOs the REST controllers return, never raw Mongoose
 // documents — a raw Employee document carries hashedPassword, which must never reach the model's
-// context window (blueprint §28: never expose secrets/unredacted HR data). get_payslip is the most
-// sensitive: its result is summarized (no raw salary/net amounts) before entering the context
-// window (blueprint §28, issue #3 security requirement).
+// context window (blueprint §28: never expose secrets/unredacted HR data). get_payslip reuses
+// PayslipResponseDto verbatim — the same shape the REST `/payroll/payslips` endpoint already
+// returns to the authenticated employee themselves, so the chat surface exposes nothing beyond
+// what that employee could already see there (blueprint §28, issue #184 security requirement).
 //
 // Caller identity is always taken from `context`, not from LLM-supplied arguments.
 export interface BuildEmployeeAgentToolsDeps {
   employeeService: EmployeeService;
   departmentService: DepartmentService;
   leaveService: LeaveService;
+  payrollService: PayrollService;
 }
 
 export function buildEmployeeAgentTools(deps: BuildEmployeeAgentToolsDeps): AnyAgentToolDefinition[] {
-  const { employeeService, departmentService, leaveService } = deps;
+  const { employeeService, departmentService, leaveService, payrollService } = deps;
 
   const getEmployeeProfile = defineAgentTool({
     name: 'get_employee_profile',
@@ -162,16 +165,17 @@ export function buildEmployeeAgentTools(deps: BuildEmployeeAgentToolsDeps): AnyA
     },
   });
 
-  // get_payslip — no dedicated payroll module exists yet (issue #3 decision: stub this tool
-  // rather than defer, so the agent surface is consistent). A follow-up epic will replace this
-  // with a real payroll read model. The stub returns summary metadata only — never raw salary/net
-  // amounts in the context window (blueprint §28: never log/expose unredacted HR documents).
+  // get_payslip — wired to the real PayrollService as of issue #184 (previously a hardcoded
+  // stub written before PayrollModule existed, see the module's own history). Filters the
+  // caller's own payslips down to the requested period, the same way get_pending_requests
+  // filters listRequests() down to pending status — no new PayrollService method needed for a
+  // presentation-layer filter over data already scoped to the caller.
   const getPayslip = defineAgentTool({
     name: 'get_payslip',
     description:
-      'Get a summary of a payslip for a given month and year. Returns availability status and ' +
-      'period metadata. Full payslip details (gross, net, deductions) require the payroll module, ' +
-      'which is not yet available in this version.',
+      "Get the current employee's own payslip for a given month and year (gross pay, net pay, " +
+      'currency, status, and the pay breakdown) — the same data shown on the payslip detail ' +
+      'screen. Returns found: false with no payslip if none exists for that period.',
     inputSchema: z.object({
       month: z
         .number()
@@ -186,16 +190,30 @@ export function buildEmployeeAgentTools(deps: BuildEmployeeAgentToolsDeps): AnyA
         .max(2100)
         .describe('The calendar year (e.g. 2025).'),
     }),
-    // Self-only access for now: payslip data is always the caller's own — no cross-employee
-    // payslip lookup even with elevated permissions until the real payroll module enforces it.
+    // Self-only access: no employeeId input at all — the tool can only ever resolve the
+    // caller's own payslips via context.actorId, mirroring PayrollController's REST endpoints
+    // (which likewise only ever read the current employee's own payroll data, never a
+    // cross-employee id). No permission check needed here for the same reason a REST call to
+    // GET /payroll/payslips needs none beyond authentication.
     handler: async (input: { month: number; year: number }, context) => {
+      const payslips = await payrollService.getPayslips(context.tenantId, context.actorId);
+      const periodPrefix = `${input.year}-${String(input.month).padStart(2, '0')}`;
+      const payslip = payslips.find((p) => p.periodStart.startsWith(periodPrefix));
+
+      if (!payslip) {
+        return {
+          employeeId: context.actorId,
+          period: { month: input.month, year: input.year },
+          found: false as const,
+          message: `No payslip found for ${input.month}/${input.year}.`,
+        };
+      }
+
       return {
         employeeId: context.actorId,
         period: { month: input.month, year: input.year },
-        status: 'unavailable' as const,
-        message:
-          'Detailed payslip data (gross pay, deductions, net pay) is not yet available. ' +
-          'The payroll module is a planned future feature. Please contact HR for payslip details.',
+        found: true as const,
+        payslip,
       };
     },
   });
