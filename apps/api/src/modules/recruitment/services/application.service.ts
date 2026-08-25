@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictError } from '../../../common/errors/app.error';
 import { ApplicationCreateDto, ApplicationResponseDto } from '../dto/application.dto';
 import { ApplicationRepository } from '../repositories/application.repository';
 import { JobRepository } from '../repositories/job.repository';
@@ -25,6 +26,10 @@ export class ApplicationService {
     const job = await this.jobRepo.findById(jobId);
     if (!job || job.tenantId.toString() !== tenantId) {
       throw new NotFoundException(`Job ${jobId} not found`);
+    }
+    const existing = await this.appRepo.findByJobAndEmployee(tenantId, jobId, employeeId);
+    if (existing) {
+      throw new ConflictError(`Already applied to job ${jobId}`);
     }
     const doc = await this.appRepo.create(tenantId, {
       jobId,

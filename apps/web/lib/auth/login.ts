@@ -11,13 +11,17 @@ export async function login(params: {
   email: string;
   password: string;
 }): Promise<void> {
-  const response = await apiFetch<LoginResponse>("/api/v1/auth/login", {
-    method: "POST",
-    body: JSON.stringify({
-      tenantSlug: params.tenantSlug,
-      email: params.email,
-      password: params.password,
-    }),
-  });
+  const response = await apiFetch<LoginResponse>(
+    "/api/v1/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        tenantSlug: params.tenantSlug,
+        email: params.email,
+        password: params.password,
+      }),
+    },
+    { skipAuthRedirect: true },
+  );
   setToken(response.accessToken);
 }

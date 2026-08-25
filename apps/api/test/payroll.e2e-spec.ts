@@ -126,7 +126,7 @@ describe('payroll API', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.ytdEarnings).toBe(5000);
-    expect(res.body.latestNetPay).toBe(3800);
+    expect(res.body.netSalary).toBe(3800);
   });
 
   it('unauthenticated request to /payroll/summary returns 401', async () => {

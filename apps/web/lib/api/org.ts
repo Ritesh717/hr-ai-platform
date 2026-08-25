@@ -23,7 +23,7 @@ interface EmployeeListResponseDto {
 
 export async function fetchOrgNodes(): Promise<OrgNode[]> {
   const [res, depts] = await Promise.all([
-    apiFetch<EmployeeListResponseDto>("/api/v1/employees?limit=500"),
+    apiFetch<EmployeeListResponseDto>("/api/v1/employees?limit=200"),
     fetchDepartments(),
   ]);
   const deptMap = new Map(depts.map((d) => [d.id, d.name]));

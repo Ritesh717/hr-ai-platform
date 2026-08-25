@@ -90,7 +90,7 @@ describe('notifications API', () => {
     expect(res.status).toBe(404);
   });
 
-  it('PATCH /notifications/read-all marks all caller notifications read (200)', async () => {
+  it('PATCH /notifications/read-all marks all caller notifications read (204)', async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     await seedNotification(ctx, tenant._id as Types.ObjectId, emp._id as Types.ObjectId);
@@ -100,7 +100,8 @@ describe('notifications API', () => {
       .patch('/api/v1/notifications/read-all')
       .set(authHeaders(ctx, emp));
 
-    expect(res.status).toBe(200);
+    // @HttpCode(204) — see notification.controller.ts.
+    expect(res.status).toBe(204);
 
     const list = await request(ctx.app.getHttpServer())
       .get('/api/v1/notifications')
@@ -108,7 +109,7 @@ describe('notifications API', () => {
     expect(list.body.every((n: { read: boolean }) => n.read)).toBe(true);
   });
 
-  it('PATCH /notifications/:id/dismiss removes the notification from the list (200)', async () => {
+  it('PATCH /notifications/:id/dismiss removes the notification from the list (204)', async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
     const notif = await seedNotification(ctx, tenant._id as Types.ObjectId, emp._id as Types.ObjectId);
@@ -117,7 +118,8 @@ describe('notifications API', () => {
       .patch(`/api/v1/notifications/${notif._id.toString()}/dismiss`)
       .set(authHeaders(ctx, emp));
 
-    expect(res.status).toBe(200);
+    // @HttpCode(204) — see notification.controller.ts.
+    expect(res.status).toBe(204);
 
     const list = await request(ctx.app.getHttpServer())
       .get('/api/v1/notifications')

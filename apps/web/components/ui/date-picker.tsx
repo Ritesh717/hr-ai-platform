@@ -2,7 +2,7 @@
 
 import "react-day-picker/style.css";
 import { CalendarDays } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type Matcher } from "react-day-picker";
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,11 +12,13 @@ export function DatePicker({
   onChange,
   placeholder = "Select date",
   className,
+  disabled,
 }: {
   value: Date | null;
   onChange: (date: Date | undefined) => void;
   placeholder?: string;
   className?: string;
+  disabled?: Matcher | Matcher[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export function DatePicker({
             onChange(date);
             setOpen(false);
           }}
+          disabled={disabled}
           className="text-text"
         />
       </PopoverContent>

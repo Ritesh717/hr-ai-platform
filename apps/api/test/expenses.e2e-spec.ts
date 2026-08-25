@@ -25,9 +25,11 @@ describe('expenses API', () => {
     await clearDatabase(ctx);
   });
 
+  // ExpenseItemCreateDto requires currency per-item (not just report-level) — see
+  // src/modules/expenses/dto/expense-report-create.dto.ts.
   const sampleItems = [
-    { description: 'Taxi', amount: 25, category: 'travel', date: '2026-05-01' },
-    { description: 'Lunch', amount: 15, category: 'meals', date: '2026-05-01' },
+    { description: 'Taxi', amount: 25, category: 'travel', date: '2026-05-01', currency: 'GBP' },
+    { description: 'Lunch', amount: 15, category: 'meals', date: '2026-05-01', currency: 'GBP' },
   ];
 
   it('POST /expenses creates a draft report (201)', async () => {
@@ -86,9 +88,12 @@ describe('expenses API', () => {
     expect(del.status).toBe(204);
   });
 
-  it('PATCH /expenses/:id/approve rejects non-submitted report (400)', async () => {
+  it('PATCH /expenses/:id/approve rejects non-submitted report (422)', async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
+    // Approving requires expense.approve, which the base employee role template doesn't grant
+    // (see default-role-templates.ts) — use an hr_admin as the approver, matching real usage.
+    const admin = await hrAdmin(ctx, tenant, roles);
 
     const create = await request(ctx.app.getHttpServer())
       .post('/api/v1/expenses')
@@ -97,14 +102,18 @@ describe('expenses API', () => {
 
     const res = await request(ctx.app.getHttpServer())
       .patch(`/api/v1/expenses/${create.body.id}/approve`)
-      .set(authHeaders(ctx, emp));
+      .set(authHeaders(ctx, admin));
 
-    expect(res.status).toBe(400);
+    // ExpenseService raises Nest's BadRequestException for this state-transition rule, which
+    // HttpExceptionFilter deliberately maps to 422 (validation_error) alongside DTO failures —
+    // there's no 400 in this codebase's AppError hierarchy (see http-exception.filter.ts).
+    expect(res.status).toBe(422);
   });
 
   it('PATCH /expenses/:id/approve approves a submitted report (200)', async () => {
     const { tenant, roles } = await createTenantWithRoles(ctx);
     const emp = await employeeUser(ctx, tenant, roles);
+    const admin = await hrAdmin(ctx, tenant, roles);
 
     const create = await request(ctx.app.getHttpServer())
       .post('/api/v1/expenses')
@@ -113,7 +122,7 @@ describe('expenses API', () => {
 
     const res = await request(ctx.app.getHttpServer())
       .patch(`/api/v1/expenses/${create.body.id}/approve`)
-      .set(authHeaders(ctx, emp));
+      .set(authHeaders(ctx, admin));
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('approved');

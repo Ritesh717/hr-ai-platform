@@ -29,5 +29,8 @@ Thumbs.db
 # Logs
 *.log
 
+# scripts/run-e2e.sh local state (mongod data dir, dev-server logs)
+/.local/
+
 # graphify knowledge-graph output (generated, regenerate with /graphify)
 graphify-out/

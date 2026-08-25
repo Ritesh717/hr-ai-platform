@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, Search } from "lucide-react";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
-import { useDepartments, useEmployees } from "@/features/employees/api";
+import { useCreateEmployee, useDepartments, useEmployees } from "@/features/employees/api";
 import { BulkActionBar } from "@/features/employees/bulk-action-bar";
+import { EmployeeCreateDialog } from "@/features/employees/employee-create-dialog";
 import { LifecycleActionMenu } from "@/features/employees/lifecycle-action-menu";
+import { NO_DEPARTMENT } from "@/features/employees/schema";
 import type { Employee } from "@/lib/api/types";
 import { AIInsightPanel } from "@/components/patterns/ai-insight-panel";
 import { PageHeader } from "@/components/layout/page-header";
@@ -17,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/toast";
 
 // ── Status display ────────────────────────────────────────────────────────────
 
@@ -112,11 +115,14 @@ function EmployeeRow({
 
 export function EmployeesScreen() {
   const router = useRouter();
+  const push = useToast();
   const { data: currentUser } = useCurrentUser();
   const { data: employees, isLoading } = useEmployees();
   const { data: departments } = useDepartments();
+  const createEmployee = useCreateEmployee();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [creating, setCreating] = useState(false);
 
   const canManage = currentUser?.permissions.has("employee.write") ?? false;
 
@@ -166,7 +172,7 @@ export function EmployeesScreen() {
           description={`${employees?.length ?? 0} people across the organization`}
           actions={
             canManage ? (
-              <Button>
+              <Button onClick={() => setCreating(true)}>
                 <PlusCircle className="mr-1.5 size-4" />
                 New employee
               </Button>
@@ -271,6 +277,26 @@ export function EmployeesScreen() {
       <div className="w-full shrink-0 lg:w-[280px]">
         <AIInsightPanel context="admin" variant="rail" />
       </div>
+
+      {creating && (
+        <EmployeeCreateDialog
+          departments={departments ?? []}
+          onClose={() => setCreating(false)}
+          onSubmit={async (values) => {
+            await createEmployee.mutateAsync({
+              fullName: values.fullName,
+              email: values.email,
+              password: values.password,
+              jobTitle: values.jobTitle,
+              roleId: values.roleId,
+              departmentId: values.departmentId === NO_DEPARTMENT ? undefined : values.departmentId,
+              hireDate: values.hireDate.toISOString().slice(0, 10),
+              location: values.location || undefined,
+            });
+            push({ title: "Employee created", tone: "success" });
+          }}
+        />
+      )}
     </div>
   );
 }
