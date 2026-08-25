@@ -35,7 +35,7 @@ export const envSchema = z.object({
   // loudly at call time if the selected provider's key is missing.
   AGENT_MODEL_PROVIDER: z.enum(['anthropic', 'openai', 'deepseek']).default('anthropic'),
   AGENT_MODEL_NAME: z.string().default('claude-3-5-haiku-20241022'),
-  AGENT_PROMPT_VERSION: z.string().default('v2'),
+  AGENT_PROMPT_VERSION: z.string().default('v3'),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),

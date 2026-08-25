@@ -2,6 +2,7 @@ import { AuthorizationError } from '../../../common/errors/app.error';
 import { DepartmentService } from '../../department/department.service';
 import { EmployeeService } from '../../employee/employee.service';
 import { LeaveService } from '../../leave/leave.service';
+import { PayrollService } from '../../payroll/payroll.service';
 import { PermissionCode } from '../../rbac/constants/permission-code.enum';
 import { buildToolSet } from './agent-tool';
 import { AgentToolContext } from './agent-tool-context';
@@ -37,17 +38,20 @@ describe('buildEmployeeAgentTools', () => {
       getBalance: jest.fn(),
       listRequests: jest.fn(),
     } as unknown as jest.Mocked<LeaveService>;
-    return { employeeService, departmentService, leaveService };
+    const payrollService = {
+      getPayslips: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<PayrollService>;
+    return { employeeService, departmentService, leaveService, payrollService };
   }
 
   describe('get_employee_profile', () => {
     it("defaults to the caller's own id when employeeId is omitted, with no permission required", async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       const employee = { _id: { toString: () => 'employee-1' }, tenantId: { toString: () => 'tenant-1' }, roleId: 'role-1' };
       employeeService.getEmployee.mockResolvedValue(employee as never);
 
       const ctx = context(); // no permissions at all — base employee self-access
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       // @ts-expect-error — ai SDK tool execute signature; second arg unused in this runtime
       await toolSet.get_employee_profile.execute!({}, {});
@@ -60,11 +64,11 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it('rejects a cross-employee lookup with the same AuthorizationError a REST call would produce', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       employeeService.getEmployee.mockRejectedValue(new AuthorizationError("Missing required permission 'employee.read'"));
 
       const ctx = context({ actorPermissions: new Set() });
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       await expect(
         // @ts-expect-error — see above
@@ -74,12 +78,12 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it('allows a cross-employee lookup once the caller holds EMPLOYEE_READ', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       const employee = { _id: { toString: () => 'employee-2' }, tenantId: { toString: () => 'tenant-1' }, roleId: 'role-1' };
       employeeService.getEmployee.mockResolvedValue(employee as never);
 
       const ctx = context({ actorPermissions: new Set([PermissionCode.EMPLOYEE_READ]) });
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       // @ts-expect-error — see above
       const result = await toolSet.get_employee_profile.execute!({ employeeId: 'employee-2' }, {});
@@ -90,12 +94,12 @@ describe('buildEmployeeAgentTools', () => {
 
   describe('get_manager', () => {
     it("resolves the caller's own manager by default", async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       const manager = { _id: { toString: () => 'manager-1' }, tenantId: { toString: () => 'tenant-1' }, roleId: 'role-1' };
       employeeService.getManager.mockResolvedValue(manager as never);
 
       const ctx = context();
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       // @ts-expect-error — see above
       const result = await toolSet.get_manager.execute!({}, {});
@@ -109,10 +113,10 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it('returns manager: null when the employee has no manager on file', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       employeeService.getManager.mockResolvedValue(null);
 
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), context());
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
 
       // @ts-expect-error — see above
       const result = await toolSet.get_manager.execute!({}, {});
@@ -121,10 +125,10 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it("rejects looking up another employee's manager without EMPLOYEE_READ", async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       employeeService.getManager.mockRejectedValue(new AuthorizationError("Missing required permission 'employee.read'"));
 
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), context());
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
 
       await expect(
         // @ts-expect-error — see above
@@ -135,9 +139,9 @@ describe('buildEmployeeAgentTools', () => {
 
   describe('get_department', () => {
     it('rejects the call before the handler runs when the caller lacks DEPARTMENT_READ', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       const ctx = context({ actorPermissions: new Set() });
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       await expect(
         // @ts-expect-error — see above
@@ -147,12 +151,12 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it('looks up a department by name when the caller holds DEPARTMENT_READ', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       const department = { _id: { toString: () => 'dept-1' }, tenantId: { toString: () => 'tenant-1' }, name: 'Engineering' };
       departmentService.getDepartmentByName.mockResolvedValue(department as never);
 
       const ctx = context({ actorPermissions: new Set([PermissionCode.DEPARTMENT_READ]) });
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       // @ts-expect-error — see above
       const result = await toolSet.get_department.execute!({ name: 'Engineering' }, {});
@@ -167,7 +171,7 @@ describe('buildEmployeeAgentTools', () => {
 
   describe('get_leave_balance', () => {
     it("fetches the caller's own balance by default (no permission required for self)", async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       leaveService.getBalance.mockResolvedValue({
         employeeId: 'employee-1',
         year: 2025,
@@ -177,7 +181,7 @@ describe('buildEmployeeAgentTools', () => {
       });
 
       const ctx = context();
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), ctx);
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), ctx);
 
       // @ts-expect-error — ai SDK tool execute signature
       const result = await toolSet.get_leave_balance.execute!({}, {});
@@ -193,10 +197,10 @@ describe('buildEmployeeAgentTools', () => {
     });
 
     it('rejects a cross-employee balance query without LEAVE_READ', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       leaveService.getBalance.mockRejectedValue(new AuthorizationError("Missing required permission 'leave.read'"));
 
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), context());
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
 
       await expect(
         // @ts-expect-error — see above
@@ -207,13 +211,13 @@ describe('buildEmployeeAgentTools', () => {
 
   describe('get_pending_requests', () => {
     it("returns the caller's own pending requests (filters to pending status)", async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
       leaveService.listRequests.mockResolvedValue([
         { _id: { toString: () => 'req-1' }, tenantId: { toString: () => 'tenant-1' }, employeeId: { toString: () => 'employee-1' }, type: 'vacation', startDate: new Date('2025-07-01'), endDate: new Date('2025-07-05'), status: 'pending', reason: null, approverId: null, approverComment: null, respondedAt: null },
         { _id: { toString: () => 'req-2' }, tenantId: { toString: () => 'tenant-1' }, employeeId: { toString: () => 'employee-1' }, type: 'sick', startDate: new Date('2025-06-01'), endDate: new Date('2025-06-01'), status: 'approved', reason: null, approverId: { toString: () => 'mgr-1' }, approverComment: null, respondedAt: new Date() },
       ] as never);
 
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), context());
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
 
       // @ts-expect-error — see above
       const result = await toolSet.get_pending_requests.execute!({}, {});
@@ -224,16 +228,45 @@ describe('buildEmployeeAgentTools', () => {
   });
 
   describe('get_payslip', () => {
-    it('returns a stub unavailability message (payroll module not yet built)', async () => {
-      const { employeeService, departmentService, leaveService } = makeServices();
-      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService }), context());
+    it("fetches the caller's own payslips and returns the one matching month/year (no employeeId input exists — self-only)", async () => {
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
+      const juneSlip = { id: 'slip-1', month: 'June 2025', periodStart: '2025-06-01', periodEnd: '2025-06-30', grossAmount: 5000, netAmount: 3800, currency: 'GBP', status: 'Paid', breakdown: [] };
+      const julySlip = { id: 'slip-2', month: 'July 2025', periodStart: '2025-07-01', periodEnd: '2025-07-31', grossAmount: 5000, netAmount: 3800, currency: 'GBP', status: 'Paid', breakdown: [] };
+      payrollService.getPayslips.mockResolvedValue([julySlip, juneSlip] as never);
+
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
 
       // @ts-expect-error — see above
       const result = await toolSet.get_payslip.execute!({ month: 6, year: 2025 }, {});
 
-      expect(result.status).toBe('unavailable');
-      expect(result.employeeId).toBe('employee-1');
-      expect(result.period).toEqual({ month: 6, year: 2025 });
+      expect(payrollService.getPayslips).toHaveBeenCalledWith('tenant-1', 'employee-1');
+      expect(result).toEqual({
+        employeeId: 'employee-1',
+        period: { month: 6, year: 2025 },
+        found: true,
+        payslip: juneSlip,
+      });
+    });
+
+    it('returns found: false with no salary data when no payslip exists for the requested period', async () => {
+      const { employeeService, departmentService, leaveService, payrollService } = makeServices();
+      payrollService.getPayslips.mockResolvedValue([]);
+
+      const toolSet = buildToolSet(buildEmployeeAgentTools({ employeeService, departmentService, leaveService, payrollService }), context());
+
+      // @ts-expect-error — see above
+      const result = await toolSet.get_payslip.execute!({ month: 6, year: 2025 }, {});
+
+      expect(result).toEqual({
+        employeeId: 'employee-1',
+        period: { month: 6, year: 2025 },
+        found: false,
+        message: 'No payslip found for 6/2025.',
+      });
+      // No raw salary fields leak through when there's nothing to report.
+      expect(result).not.toHaveProperty('payslip');
+      expect(result).not.toHaveProperty('grossAmount');
+      expect(result).not.toHaveProperty('netAmount');
     });
   });
 });
