@@ -69,10 +69,12 @@ jobs:
   test-web-e2e:
     # Full-stack Playwright suite (docs/e2e-test-plan.md, apps/web/e2e/): drives the real
     # frontend against a real backend + Mongo replica set, unlike test-node's E2E tests (which
-    # only exercise the API layer via mongodb-memory-server). Gated behind test-node/test-web so
-    # it only runs once the faster unit/lint/build checks are green.
+    # only exercise the API layer via mongodb-memory-server). Gated behind test-web (frontend
+    # must at least lint/build) but deliberately NOT behind test-node's Jest suite — the two are
+    # independent test surfaces, and test-node has pre-existing failures unrelated to this suite
+    # (see PR #182) that shouldn't block this job from proving itself out.
     runs-on: ubuntu-latest
-    needs: [test-node, test-web]
+    needs: [test-web]
 
     steps:
       - uses: actions/checkout@v4
